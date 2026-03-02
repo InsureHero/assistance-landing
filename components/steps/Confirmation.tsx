@@ -54,17 +54,20 @@ export const Confirmation = ({ travelers, onBack, onSubmit }: ConfirmationProps)
                 </div>
                 <div>
                   <p className="font-semibold">{t.confirmation.vidanta}</p>
-                  <p className="text-sm text-muted-foreground">+1 (800) 555-VIDA</p>
+                  <p className="text-sm text-muted-foreground">{t.confirmation.vidantaInternational}: {t.confirmation.vidantaInternationalPhone}</p>
+                  <p className="text-sm text-muted-foreground">{t.confirmation.vidantaNational}: {t.confirmation.vidantaNationalPhone}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                   <Phone className="w-5 h-5 text-primary" />
                 </div>
-                <div className="flex items-center gap-2">
+                <div>
                   <p className="font-semibold">{t.confirmation.mawdyHotline}</p>
+                  <p className="text-sm text-muted-foreground">{t.confirmation.mawdyCdmx}: {t.confirmation.mawdyMexicoCityPhone}</p>
+                  <p className="text-sm text-muted-foreground">{t.confirmation.mawdyNational}: {t.confirmation.mawdyRepublicPhone}</p>
+                  <p className="text-sm text-muted-foreground">{t.confirmation.mawdyAbroad}: {t.confirmation.mawdyAbroadPhone}</p>
                 </div>
-                  <p className="text-sm text-muted-foreground">+1 (800) 555-HELP</p>
               </div>
             </div>
           </div>
@@ -123,7 +126,10 @@ export const Confirmation = ({ travelers, onBack, onSubmit }: ConfirmationProps)
             </li>
             <li className="flex items-start gap-2">
               <Phone className="w-4 h-4 mt-0.5 shrink-0 text-primary/70" />
-              {t.confirmation.infoContact} <span className="font-semibold text-foreground">+1 (800) 555-VIDA</span>
+              {t.confirmation.infoContact}{" "}
+              <span className="font-semibold text-foreground">
+                {t.confirmation.vidantaInternational}: {t.confirmation.vidantaInternationalPhone} / {t.confirmation.vidantaNational}: {t.confirmation.vidantaNationalPhone}
+              </span>
             </li>
           </ul>
         </div>

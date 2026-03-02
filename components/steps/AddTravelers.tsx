@@ -13,6 +13,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import type { RiskItem } from "@/services/risk_item.service";
 import { patchBeneficiaries, patchRiskItemMetadata } from "@/services/risk_item.service";
 import type { BeneficiaryPayload, BeneficiaryOrClaimant } from "@/services/risk_item.service";
+import {
+  postSalesSyncBeneficiaries,
+  getPostSalesBaseUrl,
+  getPostSalesChannelId,
+  type PostSalesBeneficiaryAction,
+} from "@/services/post_sales.service";
 import Link from "next/link";
 
 /** Códigos ISO de países (documentCountry). */
@@ -59,10 +65,13 @@ const COUNTRIES: { code: string; name: string }[] = [
   { code: "YE", name: "Yemen" },
 ];
 
+/** Tipos fiscales para México (códigos según API). */
 const FISCAL_TYPES = [
-  { value: "CEDULA", label: "Cédula" },
-  { value: "RUC", label: "RUC" },
-  { value: "PASAPORTE", label: "Pasaporte" },
+  { value: "1004", label: "RFC (5)" },
+  { value: "1005", label: "Cédula Valor Fiscal (6)" },
+  { value: "2", label: "Pasaporte (2)" },
+  { value: "1009", label: "Cédula de identidad (10)" },
+  { value: "1", label: "Cédula (1)" },
 ];
 
 const SOURCE_LANDING = "IH_LANDING_BENEFICIARIES";
@@ -76,7 +85,7 @@ function createEmptyTraveler(isHolder: boolean): Traveler {
     isHolder,
     isTraveler: !isHolder,
     dateOfBirth: "",
-    fiscalType: "CEDULA",
+    fiscalType: "1004",
     fiscalId: "",
     documentCountry: "",
     mobilePrefix: "",
@@ -155,7 +164,7 @@ function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index: number
 
   const dateOfBirth = (fromApi<string>(b, "date_of_birth", "dateOfBirth") ?? beneficiary.date_of_birth ?? "").trim();
   const documentCountry = (fromApi<string>(b, "document_country", "documentCountry") ?? beneficiary.document_country ?? "").trim();
-  const fiscalType = (fromApi<string>(b, "fiscal_type", "fiscalType") ?? beneficiary.fiscal_type ?? "CEDULA").trim() || "CEDULA";
+  const fiscalType = (fromApi<string>(b, "fiscal_type", "fiscalType") ?? beneficiary.fiscal_type ?? "1004").trim() || "1004";
   const fiscalId = (fromApi<string>(b, "fiscal_id", "fiscalId") ?? beneficiary.fiscal_id ?? beneficiary.document_number ?? "").trim();
   const email = (beneficiary.email ?? (b.email as string) ?? "").trim();
   const mobilePrefix = (fromApi<string>(b, "mobile_prefix", "mobilePrefix") ?? beneficiary.mobile_prefix ?? "").trim();
@@ -180,6 +189,7 @@ function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index: number
     phone,
     source,
     added_at,
+    existingFromRiskItem: true,
   };
 }
 
@@ -293,7 +303,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       lastname: t.lastname ?? "",
       dateOfBirth: t.dateOfBirth ?? "",
       documentCountry: t.documentCountry ?? "",
-      fiscalType: t.fiscalType || "CEDULA",
+      fiscalType: t.fiscalType || "1004",
       fiscalId: t.fiscalId ?? "",
       email: t.email ?? "",
       mobilePrefix: t.mobilePrefix ?? "",
@@ -374,6 +384,24 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       const beneficiariesPayload = travelers.map(travelerToBeneficiaryPayload);
       await patchBeneficiaries(riskItemId, beneficiariesPayload);
       toast.success(t.addTravelers.beneficiariesSaved);
+
+      // Sincronizar con post-sales (integraciones): cada beneficiario con action create | edit
+      const baseUrl = getPostSalesBaseUrl();
+      const channelId = getPostSalesChannelId();
+      if (baseUrl && channelId && riskItem?.id) {
+        const beneficiariesWithAction: { payload: BeneficiaryPayload; action: PostSalesBeneficiaryAction }[] =
+          travelers.map((t) => ({
+            payload: travelerToBeneficiaryPayload(t),
+            action: (t.existingFromRiskItem ? "edit" : "create") as PostSalesBeneficiaryAction,
+          }));
+        try {
+          await postSalesSyncBeneficiaries(channelId, riskItem.id, riskItem, beneficiariesWithAction);
+        } catch (postSalesErr) {
+          console.warn("Post-sales sync (integraciones):", postSalesErr);
+          toast.warning(t.addTravelers.postSalesSyncFailed ?? "No se pudo sincronizar con post-venta.");
+        }
+      }
+
       onNext();
     } catch (error) {
       const message = error instanceof Error ? error.message : t.addTravelers.errorSaving;

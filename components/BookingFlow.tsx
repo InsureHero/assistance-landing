@@ -35,6 +35,8 @@ export type Traveler = {
   /** Legacy / compatibilidad con UI que mostraba nombre completo, nacionalidad, pasaporte */
   passportNumber?: string;
   nationality?: string;
+  /** true si el beneficiario ya existía al cargar el risk item (para post-sales action: edit vs create). */
+  existingFromRiskItem?: boolean;
 };
 
 const LanguageToggle = () => {

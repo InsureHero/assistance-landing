@@ -163,7 +163,7 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
     is_holder: p.isHolder,
     is_traveler: p.isTraveler,
     date_of_birth: dateOfBirth,
-    fiscal_type: p.fiscalType?.trim() ?? "CEDULA",
+    fiscal_type: p.fiscalType?.trim() ?? "1004",
     fiscal_id: (p.fiscalId ?? "").trim(),
     document_country: (p.documentCountry ?? "").trim(),
     source: (p.source ?? "").trim(),
