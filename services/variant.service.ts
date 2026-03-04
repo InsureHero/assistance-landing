@@ -24,7 +24,7 @@ export interface Variant {
 
 /**
  * GET variantes por risk item id.
- * GET /api/postventa/v1/risk-items/{riskItemId}/variants
+ * GET /api/postsales/v1/risk-items/{riskItemId}/variants
  * Headers: Authorization: Bearer {token postventa}.
  */
 export async function getVariantsByRiskItemId(
@@ -36,7 +36,7 @@ export async function getVariantsByRiskItemId(
     throw new Error("No hay token de sesión. Inicia sesión nuevamente.");
 
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postventa/v1/risk-items/${encodeURIComponent(riskItemId)}/variants`;
+  const url = `${baseUrl || ""}/api/postsales/v1/risk-items/${encodeURIComponent(riskItemId)}/variants`;
 
   const response = await fetch(url, {
     method: "GET",

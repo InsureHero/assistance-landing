@@ -1,5 +1,5 @@
-import { BookingFlow } from "@/components/BookingFlow";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <BookingFlow />;
+  redirect("/vidanta/beneficiaries");
 }

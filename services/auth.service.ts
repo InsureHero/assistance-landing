@@ -20,16 +20,11 @@ export const SESSION_EXPIRED_EVENT = "auth:session-expired";
 
 /**
  * URL base de la API postventa (InsureHero).
- * Debe apuntar al backend donde corre la API postventa (ej. http://localhost:3000).
- * En cliente y servidor se usa NEXT_PUBLIC_POSTVENTA_API_URL o NEXT_PUBLIC_API_BASE_URL.
+ * Usa NEXT_PUBLIC_API_BASE_URL para que esté disponible en cliente y servidor (ej. http://localhost:3000).
  */
 export function getBaseUrl(): string {
   const url =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_POSTVENTA_API_URL ??
-        process.env.NEXT_PUBLIC_API_BASE_URL ??
-        ""
-      : "";
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_API_BASE_URL ?? "";
   const trimmed = String(url).trim();
   return trimmed === "" ? "" : trimmed.replace(/\/$/, "");
 }
@@ -102,7 +97,7 @@ export function invalidateSessionQuietly(): void {
  */
 export async function requestPostventaOtp(email: string): Promise<void> {
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postventa/v1/auth/otp/request`;
+  const url = `${baseUrl || ""}/api/postsales/v1/auth/otp/request`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -129,7 +124,7 @@ export async function verifyPostventaOtp(
   otpCode: string
 ): Promise<string> {
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postventa/v1/auth/otp/verify`;
+  const url = `${baseUrl || ""}/api/postsales/v1/auth/otp/verify`;
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

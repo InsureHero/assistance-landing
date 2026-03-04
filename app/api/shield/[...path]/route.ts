@@ -10,7 +10,7 @@ const HEADERS_TO_FORWARD = [
 /**
  * Proxy de /api/shield/* al backend Shield.
  * Evita CORS y "Failed to fetch" haciendo que el cliente llame al mismo origen.
- * Usa NEXT_PUBLIC_API_BASE_URL como URL base del backend (ej. http://localhost:8080).
+ * Usa NEXT_API_BASE_URL como URL base del backend (ej. http://localhost:8080).
  */
 export async function GET(request: NextRequest) {
   return proxy(request);
@@ -29,12 +29,12 @@ export async function PUT(request: NextRequest) {
 }
 
 async function proxy(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
+  const baseUrl = process.env.NEXT_API_BASE_URL?.trim();
   if (!baseUrl) {
     return NextResponse.json(
       {
         error:
-          "NEXT_PUBLIC_API_BASE_URL no está definida. Configúrala en .env.local con la URL del backend Shield (ej. http://localhost:8080).",
+          "NEXT_API_BASE_URL no está definida. Configúrala en .env.local con la URL del backend Shield (ej. http://localhost:8080).",
       },
       { status: 502 }
     );
@@ -81,7 +81,7 @@ async function proxy(request: NextRequest) {
       {
         error: "No se pudo conectar con el backend Shield.",
         detail: msg,
-        hint: "Comprueba que NEXT_PUBLIC_API_BASE_URL en .env.local apunte a un servidor en ejecución (ej. http://localhost:8080).",
+        hint: "Comprueba que NEXT_API_BASE_URL en .env.local apunte a un servidor en ejecución (ej. http://localhost:8080).",
       },
       { status: 502 }
     );

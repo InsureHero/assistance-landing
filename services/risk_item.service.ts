@@ -66,7 +66,7 @@ export interface RiskItem {
 
 /**
  * GET risk items del usuario autenticado (todos los canales).
- * GET /api/postventa/v1/me/risk-items
+ * GET /api/postsales/v1/me/risk-items
  * Headers: Authorization: Bearer {token postventa}. No requiere email en URL ni x-api-key.
  */
 export async function getRiskItemsByEmail(
@@ -78,7 +78,7 @@ export async function getRiskItemsByEmail(
     throw new Error("No hay token de sesión. Inicia sesión nuevamente.");
 
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postventa/v1/me/risk-items`;
+  const url = `${baseUrl || ""}/api/postsales/v1/me/risk-items`;
 
   const response = await fetch(url, {
     method: "GET",
@@ -161,7 +161,7 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
 
 /**
  * Envía la lista completa de beneficiarios (API postventa).
- * PUT /api/postventa/v1/risk-items/{riskItemId}/beneficiaries
+ * PUT /api/postsales/v1/risk-items/{riskItemId}/beneficiaries
  * Body en snake_case (date_of_birth, fiscal_type, is_holder, etc.).
  */
 export async function putBeneficiaries(
@@ -173,7 +173,7 @@ export async function putBeneficiaries(
     throw new Error("No hay token de sesión. Inicia sesión nuevamente.");
 
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postventa/v1/risk-items/${encodeURIComponent(riskItemId)}/beneficiaries`;
+  const url = `${baseUrl || ""}/api/postsales/v1/risk-items/${encodeURIComponent(riskItemId)}/beneficiaries`;
 
   const body = {
     beneficiaries: beneficiaries.map(beneficiaryPayloadToApiFormat),
@@ -240,7 +240,7 @@ export async function patchRiskItemMetadata(
   const url =
     typeof window !== "undefined"
       ? `/api/risk-items/${encodeURIComponent(riskItemId)}/metadata`
-      : `${getBaseUrl() || ""}/api/postventa/v1/risk-items/${encodeURIComponent(riskItemId)}`;
+      : `${getBaseUrl() || ""}/api/postsales/v1/risk-items/${encodeURIComponent(riskItemId)}`;
 
   const headers: HeadersInit = {
     authorization: `Bearer ${accessToken}`,

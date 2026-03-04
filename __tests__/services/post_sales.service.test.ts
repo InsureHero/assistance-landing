@@ -19,12 +19,12 @@ describe("post_sales.service — getPostSalesBaseUrl", () => {
   });
 
   it("devuelve vacío si no hay URL configurada", () => {
-    delete process.env.NEXT_PUBLIC_POST_SALES_API_URL;
+    delete process.env.NEXT_API_BASE_URL;
     expect(getPostSalesBaseUrl()).toBe("");
   });
 
   it("devuelve la URL sin barra final", () => {
-    process.env.NEXT_PUBLIC_POST_SALES_API_URL = "https://postsales.example.com/";
+    process.env.NEXT_API_BASE_URL = "https://postsales.example.com/";
     expect(getPostSalesBaseUrl()).toBe("https://postsales.example.com");
   });
 });

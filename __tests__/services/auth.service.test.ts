@@ -18,25 +18,12 @@ describe("auth.service — getBaseUrl", () => {
   });
 
   it("devuelve vacío si no hay URL configurada", () => {
-    delete process.env.NEXT_PUBLIC_POSTVENTA_API_URL;
-    delete process.env.NEXT_PUBLIC_API_BASE_URL;
+    delete process.env.NEXT_API_BASE_URL;
     expect(getBaseUrl()).toBe("");
   });
 
-  it("usa NEXT_PUBLIC_POSTVENTA_API_URL si está definida", () => {
-    process.env.NEXT_PUBLIC_POSTVENTA_API_URL = "https://api.example.com";
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://other.com";
-    expect(getBaseUrl()).toBe("https://api.example.com");
-  });
-
-  it("usa NEXT_PUBLIC_API_BASE_URL si POSTVENTA no está definida", () => {
-    delete process.env.NEXT_PUBLIC_POSTVENTA_API_URL;
-    process.env.NEXT_PUBLIC_API_BASE_URL = "https://api.example.com";
-    expect(getBaseUrl()).toBe("https://api.example.com");
-  });
-
   it("quita la barra final de la URL", () => {
-    process.env.NEXT_PUBLIC_POSTVENTA_API_URL = "https://api.example.com/";
+    process.env.NEXT_API_BASE_URL = "https://api.example.com/";
     expect(getBaseUrl()).toBe("https://api.example.com");
   });
 });
