@@ -91,7 +91,6 @@ export const translations = {
       invalidPlanId: "The selected plan does not have a valid ID.",
       beneficiariesSaved: "Travelers saved successfully.",
       errorSaving: "Error saving. Please try again.",
-      postSalesSyncFailed: "Could not sync with post-sales.",
     },
     confirmation: {
       reviewTitle: "Review & Submit",
@@ -221,7 +220,6 @@ export const translations = {
       invalidPlanId: "El plan de asistencia no tiene un ID válido.",
       beneficiariesSaved: "Viajeros guardados exitosamente.",
       errorSaving: "Error al guardar. Intenta de nuevo.",
-      postSalesSyncFailed: "No se pudo sincronizar con post-venta.",
     },
     confirmation: {
       reviewTitle: "Revisar y Enviar",

@@ -399,9 +399,8 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       };
       try {
         await patchRiskItemMetadata(riskItemId, metadata);
-      } catch (metaErr) {
+      } catch {
         // No bloquear el flujo: guardar beneficiarios igual
-        console.warn("No se pudo guardar metadata (política de privacidad):", metaErr);
         toast.warning(t.addTravelers.privacyMetadataNotSaved);
       }
       const beneficiariesPayload = travelers.map(travelerToBeneficiaryPayload);

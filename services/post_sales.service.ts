@@ -80,6 +80,7 @@ export function toPostSalesBeneficiary(
  * Envía los beneficiarios al API de integraciones post-venta.
  * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
  * Se envía el risk item completo y la action por cada beneficiario ("create" la primera vez, "edit" en siguientes sincronizaciones).
+ * Utiliza el mismo token que se guarda en la confirmación de OTP (services/otp.service → auth.service setStoredAccessToken).
  * Si POST_SALES_API_URL o channel_id no están configurados, no se hace la petición.
  *
  * @param channelId - UUID del channel (usa getPostSalesChannelId() si no se pasa)
@@ -96,6 +97,7 @@ export async function postSalesSyncBeneficiaries(
   const baseUrl = getPostSalesBaseUrl();
   if (!baseUrl) return;
 
+  // Token guardado al confirmar OTP (verifyOtp → verifyPostventaOtp → setStoredAccessToken)
   const token = getStoredAccessToken();
   const body: PostSalesRequestBody = {
     channel_id: channelId,
