@@ -285,8 +285,7 @@ export const TripSummary = ({ email, onNext, onBack }: TripSummaryProps) => {
                             const variants = await getVariantsByRiskItemId(id, token);
                             setVariantsByRiskItem((prev) => ({ ...prev, [id]: variants }));
                           }
-                        } catch (err) {
-                          console.error("Error al cargar variantes:", err);
+                        } catch {
                           toast.error(t.tripSummary.errorLoadingVariants);
                         } finally {
                           setLoadingVariants((prev) => ({ ...prev, [id]: false }));

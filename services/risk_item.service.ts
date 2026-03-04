@@ -8,6 +8,7 @@ import {
   getBaseUrl,
   clearSessionAndNotify,
 } from "./auth.service";
+import { toIsoDate } from "@/lib/dates";
 
 export interface InsuredSubject {
   identifier_type?: string;
@@ -135,23 +136,6 @@ export interface BeneficiaryPayload {
   phone?: string;
   source: string;
   added_at: string;
-}
-
-/** Convierte fecha DD/MM/YYYY a YYYY-MM-DD para el API. Si ya es ISO, la devuelve. */
-function toIsoDate(value: string): string {
-  const s = (value ?? "").trim();
-  if (!s) return s;
-  const iso = /^\d{4}-\d{2}-\d{2}/;
-  if (iso.test(s)) return s;
-  const ddmmyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const m = s.match(ddmmyy);
-  if (m) {
-    const [, d, month, year] = m;
-    const day = d!.padStart(2, "0");
-    const mon = month!.padStart(2, "0");
-    return `${year}-${mon}-${day}`;
-  }
-  return s;
 }
 
 /** Convierte un beneficiario a formato snake_case para el API postventa. */

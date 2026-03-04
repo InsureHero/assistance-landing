@@ -79,6 +79,7 @@ export const translations = {
       travelerAdded: "Traveler added successfully",
       travelerRemoved: "Traveler removed",
       addAtLeastOne: "Please add at least one traveler",
+      maxBeneficiariesReached: "Maximum of 10 travelers per plan. You cannot add more.",
       dob: "DOB",
       incomplete: "Incomplete",
       completeYourInfo: "Please complete your information first",
@@ -90,7 +91,6 @@ export const translations = {
       invalidPlanId: "The selected plan does not have a valid ID.",
       beneficiariesSaved: "Travelers saved successfully.",
       errorSaving: "Error saving. Please try again.",
-      postSalesSyncFailed: "Could not sync with post-sales.",
     },
     confirmation: {
       reviewTitle: "Review & Submit",
@@ -208,6 +208,7 @@ export const translations = {
       travelerAdded: "Viajero agregado exitosamente",
       travelerRemoved: "Viajero eliminado",
       addAtLeastOne: "Por favor agrega al menos un viajero",
+      maxBeneficiariesReached: "Máximo de 10 viajeros por plan. No puedes agregar más.",
       dob: "Nac",
       incomplete: "Incompleto",
       completeYourInfo: "Completa tu información primero",
@@ -219,7 +220,6 @@ export const translations = {
       invalidPlanId: "El plan de asistencia no tiene un ID válido.",
       beneficiariesSaved: "Viajeros guardados exitosamente.",
       errorSaving: "Error al guardar. Intenta de nuevo.",
-      postSalesSyncFailed: "No se pudo sincronizar con post-venta.",
     },
     confirmation: {
       reviewTitle: "Revisar y Enviar",

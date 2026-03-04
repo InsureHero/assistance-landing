@@ -27,85 +27,11 @@ export function getBaseUrl(): string {
   const url =
     typeof process !== "undefined"
       ? process.env.NEXT_PUBLIC_POSTVENTA_API_URL ??
-        process.env.NEXT_PUBLIC_API_BASE_URL
+        process.env.NEXT_PUBLIC_API_BASE_URL ??
+        ""
       : "";
-  if (url === undefined || url === null) return "";
   const trimmed = String(url).trim();
   return trimmed === "" ? "" : trimmed.replace(/\/$/, "");
-}
-
-/** @deprecated Solo para compatibilidad. El landing postventa no usa API key de channel. */
-export function getApiKey(): string {
-  const key =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_USD_API_KEY ?? process.env.USD_API_KEY
-      : "";
-  if (!key || String(key).trim() === "") {
-    throw new Error(
-      "NEXT_PUBLIC_USD_API_KEY o USD_API_KEY no definida en el entorno."
-    );
-  }
-  return String(key).trim();
-}
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/**
- * Obtiene el UUID del channel desde el JWT (claim "sub") cuando el token es de Shield.
- * Con token postventa, sub es el email; esta función puede devolver null.
- * @deprecated El landing postventa usa token con sub = email.
- */
-export function getChannelIdFromToken(token: string | null): string | null {
-  if (!token || typeof token !== "string" || token.length < 10) return null;
-  const parts = token.trim().split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const base64url = parts[1];
-    const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded =
-      typeof Buffer !== "undefined"
-        ? Buffer.from(base64, "base64").toString("utf8")
-        : atob(base64);
-    const parsed = JSON.parse(decoded) as { sub?: string };
-    const sub = parsed?.sub && String(parsed.sub).trim();
-    return sub && UUID_REGEX.test(sub) ? sub.toLowerCase() : null;
-  } catch {
-    return null;
-  }
-}
-
-/** @deprecated El landing postventa no usa x-channel-id. */
-export function getChannelIdForShieldApi(): string {
-  const fromEnv =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_X_CHANNEL_ID ?? process.env.X_CHANNEL_ID
-      : "";
-  const t = String(fromEnv ?? "").trim();
-  if (t && UUID_REGEX.test(t)) return t.toLowerCase();
-  throw new Error(
-    "Para risk-items con login OTP necesitas X_CHANNEL_ID (o NEXT_PUBLIC_X_CHANNEL_ID) en .env.local con el UUID del channel (channels.id). No uses api_key."
-  );
-}
-
-/** @deprecated El landing postventa no usa channel. */
-export function getChannelId(): string {
-  const fromEnv =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_X_CHANNEL_ID ?? process.env.X_CHANNEL_ID
-      : "";
-  const t = String(fromEnv ?? "").trim();
-  if (t && UUID_REGEX.test(t)) return t.toLowerCase();
-  const key = getApiKey();
-  const keyTrim = String(key).trim();
-  if (UUID_REGEX.test(keyTrim)) return keyTrim.toLowerCase();
-  const m = keyTrim.match(
-    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
-  );
-  if (m) return m[0].toLowerCase();
-  throw new Error(
-    "NEXT_PUBLIC_X_CHANNEL_ID o X_CHANNEL_ID debe ser un UUID válido. Revisa .env.local"
-  );
 }
 
 export function getStoredAccessToken(): string | null {
@@ -184,9 +110,14 @@ export async function requestPostventaOtp(email: string): Promise<void> {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(
-      `Error al solicitar código: ${response.status} ${response.statusText}. ${text}`
-    );
+    let msg = text;
+    try {
+      const j = JSON.parse(text) as { data?: { message?: string }; details?: string };
+      msg = j.data?.message ?? j.details ?? text;
+    } catch {
+      // usar text tal cual
+    }
+    throw new Error(msg ? `Error al solicitar código: ${msg}` : `Error al solicitar código: ${response.status} ${response.statusText}`);
   }
 }
 
@@ -218,6 +149,7 @@ export async function verifyPostventaOtp(
   }
   if (!response.ok) {
     const msg =
+      data.data?.message ??
       (data as { details?: string }).details ??
       data.error ??
       (response.status === 400
@@ -229,8 +161,8 @@ export async function verifyPostventaOtp(
             : response.statusText);
     throw new Error(msg || "Error al verificar el código");
   }
-  const token =
-    data.data?.message ?? data.data?.accessToken ?? (data as any).token;
+  // API postventa devuelve solo { data: { accessToken: string } }. No usar data.message como token.
+  const token = data.data?.accessToken;
   if (typeof token !== "string") {
     throw new Error("No se recibió el token de sesión");
   }

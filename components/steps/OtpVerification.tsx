@@ -73,13 +73,14 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
   };
 
   const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
+    const digits = otp.replace(/\D/g, "").slice(0, 6);
+    if (digits.length !== 6) {
       toast.error(t.otp.invalidCode);
       return;
     }
     setVerifying(true);
     try {
-      const result = await verifyOtp(email.trim().toLowerCase(), otp);
+      const result = await verifyOtp(email.trim().toLowerCase(), digits);
       if (result.success) {
         toast.success(t.otp.verified);
         onNext();

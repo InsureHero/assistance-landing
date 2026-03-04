@@ -76,6 +76,14 @@ const FISCAL_TYPES = [
 
 const SOURCE_LANDING = "IH_LANDING_BENEFICIARIES";
 
+/** Máximo de beneficiarios permitidos por risk item. */
+const MAX_BENEFICIARIES = 10;
+
+/** Key para recordar si ya sincronizamos este risk item con post-sales (primera vez = create, siguientes = edit). */
+function getPostSalesSyncedKey(riskItemId: string): string {
+  return `post_sales_synced_${riskItemId}`;
+}
+
 /** Crea un traveler vacío. Para nuevo viajero desde el landing usar createEmptyTraveler(false) → isTraveler: true, isHolder: false. */
 function createEmptyTraveler(isHolder: boolean): Traveler {
   return {
@@ -224,11 +232,16 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
   const privacyPolicyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL ?? "/privacy-policy";
 
   // Cargar beneficiarios del risk item al montar el componente (primer elemento = holder)
+  // Si el risk item ya trae beneficiarios, marcar como ya sincronizado con post-sales → en el guardado se enviarán como "edit"
   // Inicializar checkbox de política de privacidad desde metadata (policy_privacy === true → marcado)
   useEffect(() => {
     if (riskItem?.beneficiaries && riskItem.beneficiaries.length > 0) {
       const loadedTravelers = riskItem.beneficiaries.map((b, i) => beneficiaryToTraveler(b, i));
       setTravelers(loadedTravelers);
+      const riskItemId = riskItem.id ?? riskItem.uid;
+      if (riskItemId && typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(getPostSalesSyncedKey(riskItemId), "true");
+      }
     }
     const privacyPolicy = riskItem?.metadata?.privacy_policy;
     const policyPrivacy =
@@ -274,11 +287,21 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
 
     if (editingIndex !== null) {
       const updated = [...travelers];
-      updated[editingIndex] = { ...currentTraveler };
+      const existing = travelers[editingIndex];
+      const toSave: Traveler = { ...currentTraveler };
+      // No modificar source si el viajero ya lo tenía (ej. holder con "VIDANTA_CALLCENTER")
+      if (existing.source != null && String(existing.source).trim() !== "") {
+        toSave.source = existing.source;
+      }
+      updated[editingIndex] = toSave;
       setTravelers(updated);
       setEditingIndex(null);
       toast.success(t.addTravelers.travelerUpdated);
     } else {
+      if (travelers.length >= MAX_BENEFICIARIES) {
+        toast.error(t.addTravelers.maxBeneficiariesReached);
+        return;
+      }
       // Nuevo traveler desde el landing: siempre isTraveler: true, isHolder: false
       const newTraveler: Traveler = {
         ...currentTraveler,
@@ -376,29 +399,30 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       };
       try {
         await patchRiskItemMetadata(riskItemId, metadata);
-      } catch (metaErr) {
+      } catch {
         // No bloquear el flujo: guardar beneficiarios igual
-        console.warn("No se pudo guardar metadata (política de privacidad):", metaErr);
         toast.warning(t.addTravelers.privacyMetadataNotSaved);
       }
       const beneficiariesPayload = travelers.map(travelerToBeneficiaryPayload);
       await patchBeneficiaries(riskItemId, beneficiariesPayload);
       toast.success(t.addTravelers.beneficiariesSaved);
 
-      // Sincronizar con post-sales (integraciones): cada beneficiario con action create | edit
+      // Sincronizar con post-sales después de actualizar beneficiarios: enviamos risk item completo y action por beneficiario.
+      // Primera vez que se consume el servicio para este risk item → todos "create". Segunda y siguientes → todos "edit".
       const baseUrl = getPostSalesBaseUrl();
       const channelId = getPostSalesChannelId();
-      if (baseUrl && channelId && riskItem?.id) {
+      if (baseUrl && channelId && riskItemId) {
+        const syncedKey = getPostSalesSyncedKey(riskItemId);
+        const isFirstSync =
+          typeof sessionStorage !== "undefined" ? !sessionStorage.getItem(syncedKey) : true;
+        const action: PostSalesBeneficiaryAction = isFirstSync ? "create" : "edit";
         const beneficiariesWithAction: { payload: BeneficiaryPayload; action: PostSalesBeneficiaryAction }[] =
-          travelers.map((t) => ({
-            payload: travelerToBeneficiaryPayload(t),
-            action: (t.existingFromRiskItem ? "edit" : "create") as PostSalesBeneficiaryAction,
-          }));
+          beneficiariesPayload.map((payload) => ({ payload, action }));
         try {
-          await postSalesSyncBeneficiaries(channelId, riskItem.id, riskItem, beneficiariesWithAction);
-        } catch (postSalesErr) {
-          console.warn("Post-sales sync (integraciones):", postSalesErr);
-          toast.warning(t.addTravelers.postSalesSyncFailed ?? "No se pudo sincronizar con post-venta.");
+          await postSalesSyncBeneficiaries(channelId, riskItemId, riskItem, beneficiariesWithAction);
+          if (typeof sessionStorage !== "undefined") sessionStorage.setItem(syncedKey, "true");
+        } catch {
+          // Solo consumir y enviar datos; no mostrar mensajes al usuario
         }
       }
 
@@ -410,6 +434,9 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       setIsSaving(false);
     }
   };
+
+  const allTravelersComplete = travelers.length > 0 && travelers.every(isTravelerComplete);
+  const canContinue = allTravelersComplete && privacyAccepted;
 
   const selectClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
@@ -687,12 +714,18 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
             <h3 className="font-semibold flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" /> {t.addTravelers.addNewTraveler}
             </h3>
-            {renderFormFields("new")}
-            <div className="flex gap-2">
-              <Button onClick={handleAddOrSaveTraveler} className="flex-1 gradient-ocean text-white hover:opacity-90">
-                <Plus className="mr-2 w-4 h-4" /> {t.addTravelers.addThisTraveler}
-              </Button>
-            </div>
+            {travelers.length >= MAX_BENEFICIARIES ? (
+              <p className="text-sm text-muted-foreground">{t.addTravelers.maxBeneficiariesReached}</p>
+            ) : (
+              <>
+                {renderFormFields("new")}
+                <div className="flex gap-2">
+                  <Button onClick={handleAddOrSaveTraveler} className="flex-1 gradient-ocean text-white hover:opacity-90">
+                    <Plus className="mr-2 w-4 h-4" /> {t.addTravelers.addThisTraveler}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -725,7 +758,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
           <Button
             onClick={handleContinue}
             className="flex-1 h-12 text-base font-medium gradient-ocean hover:opacity-90"
-            disabled={travelers.length === 0 || isSaving}
+            disabled={!canContinue || isSaving}
           >
             {isSaving ? (
               <>

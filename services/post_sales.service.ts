@@ -7,20 +7,7 @@
 import { getStoredAccessToken } from "./auth.service";
 import type { RiskItem } from "./risk_item.service";
 import type { BeneficiaryPayload } from "./risk_item.service";
-
-/** Fecha DD/MM/YYYY o YYYY-MM-DD a YYYY-MM-DD para el API post-sales. */
-function toIsoDateSafe(value: string): string {
-  const s = (value ?? "").trim();
-  if (!s) return s;
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s;
-  const ddmmyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const m = s.match(ddmmyy);
-  if (m) {
-    const [, d, month, year] = m;
-    return `${year}-${month!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
-  }
-  return s;
-}
+import { toIsoDate } from "@/lib/dates";
 
 /** URL base del API de integraciones post-venta (variable de entorno). */
 export function getPostSalesBaseUrl(): string {
@@ -73,7 +60,7 @@ export function toPostSalesBeneficiary(
   p: BeneficiaryPayload,
   action: PostSalesBeneficiaryAction
 ): PostSalesBeneficiary {
-  const dateOfBirth = toIsoDateSafe(p.dateOfBirth);
+  const dateOfBirth = toIsoDate(p.dateOfBirth);
   const out: PostSalesBeneficiary = {
     name: (p.name ?? "").trim(),
     lastname: (p.lastname ?? "").trim(),
@@ -91,13 +78,15 @@ export function toPostSalesBeneficiary(
 
 /**
  * Envía los beneficiarios al API de integraciones post-venta.
- * Se debe llamar después de PUT beneficiaries (postventa).
+ * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
+ * Se envía el risk item completo y la action por cada beneficiario ("create" la primera vez, "edit" en siguientes sincronizaciones).
+ * Utiliza el mismo token que se guarda en la confirmación de OTP (services/otp.service → auth.service setStoredAccessToken).
  * Si POST_SALES_API_URL o channel_id no están configurados, no se hace la petición.
  *
  * @param channelId - UUID del channel (usa getPostSalesChannelId() si no se pasa)
  * @param riskItemId - UUID del risk item
- * @param riskItem - Risk item completo (opcional, para enviar en el body si el API lo acepta)
- * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit"
+ * @param riskItem - Risk item completo (se envía en el body)
+ * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
  */
 export async function postSalesSyncBeneficiaries(
   channelId: string,
@@ -108,6 +97,7 @@ export async function postSalesSyncBeneficiaries(
   const baseUrl = getPostSalesBaseUrl();
   if (!baseUrl) return;
 
+  // Token guardado al confirmar OTP (verifyOtp → verifyPostventaOtp → setStoredAccessToken)
   const token = getStoredAccessToken();
   const body: PostSalesRequestBody = {
     channel_id: channelId,
