@@ -66,9 +66,9 @@ export async function getVariantsByRiskItemId(
   };
   try {
     body = JSON.parse(responseText) as typeof body;
-  } catch (e) {
+  } catch (error: unknown) {
     throw new Error(
-      `Error al parsear respuesta: ${e instanceof Error ? e.message : String(e)}`
+      `Error al parsear respuesta: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 
