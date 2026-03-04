@@ -37,7 +37,7 @@ describe("risk_item.service — getRiskItemsByEmail", () => {
 
     expect(result).toEqual(riskItems);
     expect(global.fetch).toHaveBeenCalledWith(
-      "https://api.test.com/api/postventa/v1/me/risk-items",
+      "https://api.test.com/api/postsales/v1/me/risk-items",
       expect.objectContaining({
         method: "GET",
         headers: { authorization: "Bearer custom-token" },

@@ -397,11 +397,22 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
           policy_privacy: privacyAccepted,
         },
       };
+      // Saber si la política ya estaba aceptada en el risk item (para no mostrar mensaje confuso si falla el PATCH)
+      const existingPrivacy = riskItem?.metadata?.privacy_policy as { policy_privacy?: unknown } | undefined;
+      const alreadyHadPrivacyAccepted =
+        existingPrivacy &&
+        typeof existingPrivacy === "object" &&
+        "policy_privacy" in existingPrivacy &&
+        (existingPrivacy.policy_privacy === true ||
+          (typeof existingPrivacy.policy_privacy === "string" &&
+            existingPrivacy.policy_privacy.toLowerCase() === "true"));
       try {
         await patchRiskItemMetadata(riskItemId, metadata);
       } catch {
-        // No bloquear el flujo: guardar beneficiarios igual
-        toast.warning(t.addTravelers.privacyMetadataNotSaved);
+        // No bloquear el flujo: guardar beneficiarios igual. Solo avisar si era la primera vez que persistíamos la aceptación.
+        if (privacyAccepted && !alreadyHadPrivacyAccepted) {
+          toast.warning(t.addTravelers.privacyMetadataNotSaved);
+        }
       }
       const beneficiariesPayload = travelers.map(travelerToBeneficiaryPayload);
       await patchBeneficiaries(riskItemId, beneficiariesPayload);

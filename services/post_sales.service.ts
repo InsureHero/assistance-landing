@@ -9,13 +9,14 @@ import type { RiskItem } from "./risk_item.service";
 import type { BeneficiaryPayload } from "./risk_item.service";
 import { toIsoDate } from "@/lib/dates";
 
-/** URL base del API de integraciones post-venta (variable de entorno). */
+/**
+ * URL base del API de integraciones post-venta.
+ * Usa NEXT_PUBLIC_API_BASE_URL (disponible en cliente y servidor).
+ */
 export function getPostSalesBaseUrl(): string {
   const url =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_POST_SALES_API_URL ?? ""
-      : "";
-  const trimmed = String(url ?? "").trim();
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_API_BASE_URL ?? "";
+  const trimmed = String(url).trim();
   return trimmed === "" ? "" : trimmed.replace(/\/$/, "");
 }
 

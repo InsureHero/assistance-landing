@@ -38,23 +38,19 @@ export async function PATCH(
     );
   }
 
-  const baseUrl = (
-    process.env.NEXT_PUBLIC_POSTVENTA_API_URL ??
-    process.env.NEXT_PUBLIC_API_BASE_URL ??
-    ""
-  ).replace(/\/$/, "");
+  const baseUrl = (process.env.NEXT_API_BASE_URL ?? "").replace(/\/$/, "");
 
   if (!baseUrl) {
     if (process.env.NODE_ENV !== "production") {
-      console.error("[metadata] NEXT_PUBLIC_POSTVENTA_API_URL o NEXT_PUBLIC_API_BASE_URL no definida");
+      console.error("[metadata] NEXT_API_BASE_URL no está definida");
     }
     return NextResponse.json(
-      { error: "API postventa no configurada (base URL)" },
+      { error: "API postventa no configurada (NEXT_API_BASE_URL)" },
       { status: 502 }
     );
   }
 
-  const url = `${baseUrl}/api/postventa/v1/risk-items/${encodeURIComponent(riskItemId)}`;
+  const url = `${baseUrl}/api/postsales/v1/risk-items/${encodeURIComponent(riskItemId)}`;
 
   try {
     const res = await fetch(url, {
