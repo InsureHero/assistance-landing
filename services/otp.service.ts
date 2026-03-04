@@ -22,9 +22,9 @@ export async function verifyOtp(
   try {
     const token = await verifyPostventaOtp(email, otpCode);
     return { success: true, newToken: token };
-  } catch (err) {
+  } catch (error: unknown) {
     const message =
-      err instanceof Error ? err.message : "Error al verificar el código";
+      error instanceof Error ? error.message : "Error al verificar el código";
     return { success: false, errorMessage: message };
   }
 }

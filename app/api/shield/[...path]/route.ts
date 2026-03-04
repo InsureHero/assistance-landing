@@ -75,8 +75,8 @@ async function proxy(request: NextRequest) {
       statusText: res.statusText,
       headers: { "Content-Type": contentType },
     });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
       {
         error: "No se pudo conectar con el backend Shield.",

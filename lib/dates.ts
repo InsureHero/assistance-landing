@@ -14,7 +14,9 @@ export function toIsoDate(value: string): string {
   const m = s.match(ddmmyy);
   if (m) {
     const [, d, month, year] = m;
-    return `${year}-${month!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
+    const day = d ?? "";
+    const mon = month ?? "";
+    return `${year}-${mon.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
   return s;
 }

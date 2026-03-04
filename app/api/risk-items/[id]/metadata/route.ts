@@ -45,7 +45,9 @@ export async function PATCH(
   ).replace(/\/$/, "");
 
   if (!baseUrl) {
-    console.error("[metadata] NEXT_PUBLIC_POSTVENTA_API_URL o NEXT_PUBLIC_API_BASE_URL no definida");
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[metadata] NEXT_PUBLIC_POSTVENTA_API_URL o NEXT_PUBLIC_API_BASE_URL no definida");
+    }
     return NextResponse.json(
       { error: "API postventa no configurada (base URL)" },
       { status: 502 }
@@ -67,7 +69,9 @@ export async function PATCH(
     const text = await res.text();
 
     if (!res.ok) {
-      console.error("[metadata] Backend respondió:", res.status, text);
+      if (process.env.NODE_ENV !== "production") {
+        console.error("[metadata] Backend respondió:", res.status, text);
+      }
       return NextResponse.json(
         { error: "Error al actualizar metadata en el backend", detail: text },
         { status: res.status }
@@ -75,9 +79,11 @@ export async function PATCH(
     }
 
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[metadata] Error llamando al backend:", msg);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[metadata] Error llamando al backend:", msg);
+    }
     return NextResponse.json(
       { error: "No se pudo conectar con el backend", detail: msg },
       { status: 502 }

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const { getRiskItemsByEmail } = await import("@/services/risk_item.service");
     const riskItems = await getRiskItemsByEmail(email, token);
     return NextResponse.json({ data: riskItems });
-  } catch (error) {
+  } catch (error: unknown) {
     const err = error as Error & { status?: number };
     const status = err?.status === 401 ? 401 : 500;
     const errorMessage = error instanceof Error ? error.message : String(error);
