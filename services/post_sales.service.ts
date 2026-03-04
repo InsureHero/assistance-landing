@@ -78,13 +78,14 @@ export function toPostSalesBeneficiary(
 
 /**
  * Envía los beneficiarios al API de integraciones post-venta.
- * Se debe llamar después de PUT beneficiaries (postventa).
+ * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
+ * Se envía el risk item completo y la action por cada beneficiario ("create" la primera vez, "edit" en siguientes sincronizaciones).
  * Si POST_SALES_API_URL o channel_id no están configurados, no se hace la petición.
  *
  * @param channelId - UUID del channel (usa getPostSalesChannelId() si no se pasa)
  * @param riskItemId - UUID del risk item
- * @param riskItem - Risk item completo (opcional, para enviar en el body si el API lo acepta)
- * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit"
+ * @param riskItem - Risk item completo (se envía en el body)
+ * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
  */
 export async function postSalesSyncBeneficiaries(
   channelId: string,
