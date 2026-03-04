@@ -162,9 +162,9 @@ const BookingFlowInner = () => {
     <div className="min-h-screen gradient-sky">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-8 animate-fade-in relative">
-            <div className="absolute right-0 top-0">
+          {/* Header: idioma en su propia fila arriba del logo para no superponerse en móvil */}
+          <div className="text-center mb-8 animate-fade-in">
+            <div className="flex justify-end mb-3">
               <LanguageToggle />
             </div>
             <Image src="/assets/vidanta-logo.png" alt="Vidanta" width={200} height={72} className="h-14 md:h-18 mx-auto mb-2" priority />
@@ -211,7 +211,9 @@ const BookingFlowInner = () => {
               <Confirmation
                 travelers={travelers}
                 onBack={handlePreviousStep}
-                onSubmit={() => {}}
+                onSubmit={() => {
+                  // La sesión ya se invalidó al salir de AddTravelers; aquí solo confirmamos visualmente.
+                }}
               />
             )}
           </div>

@@ -51,7 +51,6 @@ export async function getVariantsByRiskItemId(
     if (response.status === 401 && typeof window !== "undefined") {
       clearSessionAndNotify();
     }
-    console.error("[Variants] Error respuesta:", response.status, responseText);
     const err = new Error(
       `Error al obtener variantes: ${response.status} ${response.statusText}. ${responseText}`
     ) as Error & { status?: number };

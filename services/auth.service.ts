@@ -27,9 +27,9 @@ export function getBaseUrl(): string {
   const url =
     typeof process !== "undefined"
       ? process.env.NEXT_PUBLIC_POSTVENTA_API_URL ??
-        process.env.NEXT_PUBLIC_API_BASE_URL
+        process.env.NEXT_PUBLIC_API_BASE_URL ??
+        ""
       : "";
-  if (url === undefined || url === null) return "";
   const trimmed = String(url).trim();
   return trimmed === "" ? "" : trimmed.replace(/\/$/, "");
 }
@@ -184,9 +184,14 @@ export async function requestPostventaOtp(email: string): Promise<void> {
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(
-      `Error al solicitar código: ${response.status} ${response.statusText}. ${text}`
-    );
+    let msg = text;
+    try {
+      const j = JSON.parse(text) as { data?: { message?: string }; details?: string };
+      msg = j.data?.message ?? j.details ?? text;
+    } catch {
+      // usar text tal cual
+    }
+    throw new Error(msg ? `Error al solicitar código: ${msg}` : `Error al solicitar código: ${response.status} ${response.statusText}`);
   }
 }
 
@@ -218,6 +223,7 @@ export async function verifyPostventaOtp(
   }
   if (!response.ok) {
     const msg =
+      data.data?.message ??
       (data as { details?: string }).details ??
       data.error ??
       (response.status === 400
@@ -229,8 +235,8 @@ export async function verifyPostventaOtp(
             : response.statusText);
     throw new Error(msg || "Error al verificar el código");
   }
-  const token =
-    data.data?.message ?? data.data?.accessToken ?? (data as any).token;
+  // API postventa devuelve solo { data: { accessToken: string } }. No usar data.message como token.
+  const token = data.data?.accessToken;
   if (typeof token !== "string") {
     throw new Error("No se recibió el token de sesión");
   }

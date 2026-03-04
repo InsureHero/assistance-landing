@@ -274,7 +274,13 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
 
     if (editingIndex !== null) {
       const updated = [...travelers];
-      updated[editingIndex] = { ...currentTraveler };
+      const existing = travelers[editingIndex];
+      const toSave: Traveler = { ...currentTraveler };
+      // No modificar source si el viajero ya lo tenía (ej. holder con "VIDANTA_CALLCENTER")
+      if (existing.source != null && String(existing.source).trim() !== "") {
+        toSave.source = existing.source;
+      }
+      updated[editingIndex] = toSave;
       setTravelers(updated);
       setEditingIndex(null);
       toast.success(t.addTravelers.travelerUpdated);
@@ -410,6 +416,9 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       setIsSaving(false);
     }
   };
+
+  const allTravelersComplete = travelers.length > 0 && travelers.every(isTravelerComplete);
+  const canContinue = allTravelersComplete && privacyAccepted;
 
   const selectClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
@@ -725,7 +734,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
           <Button
             onClick={handleContinue}
             className="flex-1 h-12 text-base font-medium gradient-ocean hover:opacity-90"
-            disabled={travelers.length === 0 || isSaving}
+            disabled={!canContinue || isSaving}
           >
             {isSaving ? (
               <>

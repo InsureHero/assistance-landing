@@ -7,20 +7,7 @@
 import { getStoredAccessToken } from "./auth.service";
 import type { RiskItem } from "./risk_item.service";
 import type { BeneficiaryPayload } from "./risk_item.service";
-
-/** Fecha DD/MM/YYYY o YYYY-MM-DD a YYYY-MM-DD para el API post-sales. */
-function toIsoDateSafe(value: string): string {
-  const s = (value ?? "").trim();
-  if (!s) return s;
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s;
-  const ddmmyy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-  const m = s.match(ddmmyy);
-  if (m) {
-    const [, d, month, year] = m;
-    return `${year}-${month!.padStart(2, "0")}-${d!.padStart(2, "0")}`;
-  }
-  return s;
-}
+import { toIsoDate } from "@/lib/dates";
 
 /** URL base del API de integraciones post-venta (variable de entorno). */
 export function getPostSalesBaseUrl(): string {
@@ -73,7 +60,7 @@ export function toPostSalesBeneficiary(
   p: BeneficiaryPayload,
   action: PostSalesBeneficiaryAction
 ): PostSalesBeneficiary {
-  const dateOfBirth = toIsoDateSafe(p.dateOfBirth);
+  const dateOfBirth = toIsoDate(p.dateOfBirth);
   const out: PostSalesBeneficiary = {
     name: (p.name ?? "").trim(),
     lastname: (p.lastname ?? "").trim(),
