@@ -16,7 +16,6 @@ import type { BeneficiaryPayload, BeneficiaryOrClaimant } from "@/services/risk_
 import {
   postSalesSyncBeneficiaries,
   getPostSalesBaseUrl,
-  getPostSalesChannelId,
   type PostSalesBeneficiaryAction,
 } from "@/services/post_sales.service";
 import Link from "next/link";
@@ -418,11 +417,9 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       await patchBeneficiaries(riskItemId, beneficiariesPayload);
       toast.success(t.addTravelers.beneficiariesSaved);
 
-      // Sincronizar con post-sales después de actualizar beneficiarios: enviamos risk item completo y action por beneficiario.
-      // Primera vez que se consume el servicio para este risk item → todos "create". Segunda y siguientes → todos "edit".
+      // Sincronizar con post-sales después de actualizar beneficiarios (risk_item_id, beneficiaries, token).
       const baseUrl = getPostSalesBaseUrl();
-      const channelId = getPostSalesChannelId();
-      if (baseUrl && channelId && riskItemId) {
+      if (baseUrl && riskItemId) {
         const syncedKey = getPostSalesSyncedKey(riskItemId);
         const isFirstSync =
           typeof sessionStorage !== "undefined" ? !sessionStorage.getItem(syncedKey) : true;
@@ -430,7 +427,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
         const beneficiariesWithAction: { payload: BeneficiaryPayload; action: PostSalesBeneficiaryAction }[] =
           beneficiariesPayload.map((payload) => ({ payload, action }));
         try {
-          await postSalesSyncBeneficiaries(channelId, riskItemId, riskItem, beneficiariesWithAction);
+          await postSalesSyncBeneficiaries(riskItemId, riskItem, beneficiariesWithAction);
           if (typeof sessionStorage !== "undefined") sessionStorage.setItem(syncedKey, "true");
         } catch {
           // Solo consumir y enviar datos; no mostrar mensajes al usuario
