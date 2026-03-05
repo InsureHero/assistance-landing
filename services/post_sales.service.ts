@@ -95,6 +95,8 @@ export async function postSalesSyncBeneficiaries(
 
   const url = `${baseUrl}/api/integrations/post-sales`;
 
+  // Headers: Content-Type y Authorization. Origin lo envía el navegador en cross-origin;
+  // el API (ej. localhost:3000) debe permitir CORS para el origen del landing (ej. localhost:3001).
   const response = await fetch(url, {
     method: "POST",
     headers: {
