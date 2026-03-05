@@ -1,8 +1,6 @@
 import {
   getPostSalesBaseUrl,
-  getPostSalesChannelId,
   toPostSalesBeneficiary,
-  type PostSalesBeneficiary,
 } from "@/services/post_sales.service";
 import type { BeneficiaryPayload } from "@/services/risk_item.service";
 
@@ -18,37 +16,14 @@ describe("post_sales.service — getPostSalesBaseUrl", () => {
     process.env = originalEnv;
   });
 
-  it("devuelve vacío si no hay URL configurada", () => {
-    delete process.env.NEXT_API_BASE_URL;
+  it("devuelve vacío si NEXT_PUBLIC_API_BASE_URL no está configurada", () => {
+    delete process.env.NEXT_PUBLIC_API_BASE_URL;
     expect(getPostSalesBaseUrl()).toBe("");
   });
 
   it("devuelve la URL sin barra final", () => {
-    process.env.NEXT_API_BASE_URL = "https://postsales.example.com/";
-    expect(getPostSalesBaseUrl()).toBe("https://postsales.example.com");
-  });
-});
-
-describe("post_sales.service — getPostSalesChannelId", () => {
-  const originalEnv = process.env;
-
-  beforeEach(() => {
-    jest.resetModules();
-    process.env = { ...originalEnv };
-  });
-
-  afterAll(() => {
-    process.env = originalEnv;
-  });
-
-  it("devuelve null si no está configurado", () => {
-    delete process.env.NEXT_PUBLIC_POST_SALES_CHANNEL_ID;
-    expect(getPostSalesChannelId()).toBeNull();
-  });
-
-  it("devuelve el channel ID recortado", () => {
-    process.env.NEXT_PUBLIC_POST_SALES_CHANNEL_ID = "  uuid-123  ";
-    expect(getPostSalesChannelId()).toBe("uuid-123");
+    process.env.NEXT_PUBLIC_API_BASE_URL = "https://app.insurehero.io/";
+    expect(getPostSalesBaseUrl()).toBe("https://app.insurehero.io");
   });
 });
 

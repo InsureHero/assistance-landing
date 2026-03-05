@@ -11,28 +11,17 @@ import { toIsoDate } from "@/lib/dates";
 
 /**
  * URL base del API de integraciones post-venta.
- * Usa NEXT_PUBLIC_API_BASE_URL (disponible en cliente y servidor).
+ * Usa NEXT_PUBLIC_API_BASE_URL. La ruta completa es: {baseUrl}/api/integrations/post-sales
  */
 export function getPostSalesBaseUrl(): string {
-  const url =
-    process.env.NEXT_PUBLIC_API_BASE_URL ?? process.env.NEXT_API_BASE_URL ?? "";
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
   const trimmed = String(url).trim();
   return trimmed === "" ? "" : trimmed.replace(/\/$/, "");
 }
 
-/** Channel ID para el body de post-sales (variable de entorno). */
-export function getPostSalesChannelId(): string | null {
-  const raw =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_POST_SALES_CHANNEL_ID ?? ""
-      : "";
-  const t = String(raw ?? "").trim();
-  return t === "" ? null : t;
-}
-
 export type PostSalesBeneficiaryAction = "create" | "edit";
 
-/** Beneficiario para el body de POST post-sales (camelCase como en el curl). */
+/** Beneficiario para el body de POST post-sales (solo campos necesarios). */
 export interface PostSalesBeneficiary {
   name: string;
   lastname: string;
@@ -46,9 +35,8 @@ export interface PostSalesBeneficiary {
   action: PostSalesBeneficiaryAction;
 }
 
-/** Body del POST /api/integrations/post-sales. Incluye risk_item completo si se proporciona. */
+/** Body del POST /api/integrations/post-sales (solo lo necesario). */
 export interface PostSalesRequestBody {
-  channel_id: string;
   risk_item_id: string;
   beneficiaries: PostSalesBeneficiary[];
   risk_item?: RiskItem;
@@ -80,17 +68,13 @@ export function toPostSalesBeneficiary(
 /**
  * Envía los beneficiarios al API de integraciones post-venta.
  * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
- * Se envía el risk item completo y la action por cada beneficiario ("create" la primera vez, "edit" en siguientes sincronizaciones).
- * Utiliza el mismo token que se guarda en la confirmación de OTP (services/otp.service → auth.service setStoredAccessToken).
- * Si POST_SALES_API_URL o channel_id no están configurados, no se hace la petición.
+ * Usa el token guardado en sesión (OTP). Si no hay base URL configurada, no se hace la petición.
  *
- * @param channelId - UUID del channel (usa getPostSalesChannelId() si no se pasa)
  * @param riskItemId - UUID del risk item
- * @param riskItem - Risk item completo (se envía en el body)
+ * @param riskItem - Risk item completo (opcional, se envía en el body si se proporciona)
  * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
  */
 export async function postSalesSyncBeneficiaries(
-  channelId: string,
   riskItemId: string,
   riskItem: RiskItem | null,
   beneficiariesWithAction: { payload: BeneficiaryPayload; action: PostSalesBeneficiaryAction }[]
@@ -98,10 +82,8 @@ export async function postSalesSyncBeneficiaries(
   const baseUrl = getPostSalesBaseUrl();
   if (!baseUrl) return;
 
-  // Token guardado al confirmar OTP (verifyOtp → verifyPostventaOtp → setStoredAccessToken)
   const token = getStoredAccessToken();
   const body: PostSalesRequestBody = {
-    channel_id: channelId,
     risk_item_id: riskItemId,
     beneficiaries: beneficiariesWithAction.map(({ payload, action }) =>
       toPostSalesBeneficiary(payload, action)

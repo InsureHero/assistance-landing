@@ -38,14 +38,25 @@ export async function PATCH(
     );
   }
 
-  const baseUrl = (process.env.NEXT_API_BASE_URL ?? "").replace(/\/$/, "");
+  // Usar NEXT_PUBLIC_API_BASE_URL (misma base que el cliente) para el proxy de metadata
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_API_BASE_URL ??
+    process.env.NEXT_PUBLIC_POSTVENTA_API_URL ??
+    process.env.NEXT_API_BASE_URL ??
+    ""
+  ).replace(/\/$/, "");
 
   if (!baseUrl) {
     if (process.env.NODE_ENV !== "production") {
-      console.error("[metadata] NEXT_API_BASE_URL no está definida");
+      console.error(
+        "[metadata] No hay URL de API postventa. Define NEXT_PUBLIC_API_BASE_URL en .env.local"
+      );
     }
     return NextResponse.json(
-      { error: "API postventa no configurada (NEXT_API_BASE_URL)" },
+      {
+        error:
+          "API postventa no configurada. Define NEXT_PUBLIC_API_BASE_URL en .env.local",
+      },
       { status: 502 }
     );
   }
