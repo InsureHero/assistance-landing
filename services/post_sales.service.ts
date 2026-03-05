@@ -35,11 +35,14 @@ export interface PostSalesBeneficiary {
   action: PostSalesBeneficiaryAction;
 }
 
-/** Body del POST /api/integrations/post-sales (solo lo necesario). */
-export interface PostSalesRequestBody {
-  risk_item_id: string;
+/** risk_item con beneficiaries ya transformados (PostSalesBeneficiary con action en cada uno). */
+export type RiskItemForPostSales = Omit<RiskItem, "beneficiaries"> & {
   beneficiaries: PostSalesBeneficiary[];
-  risk_item?: RiskItem;
+};
+
+/** Body del POST /api/integrations/post-sales: solo risk_item (con beneficiaries transformados dentro). */
+export interface PostSalesRequestBody {
+  risk_item: RiskItemForPostSales;
 }
 
 /**
@@ -66,32 +69,31 @@ export function toPostSalesBeneficiary(
 }
 
 /**
- * Envía los beneficiarios al API de integraciones post-venta.
+ * Envía al API de integraciones post-venta.
  * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
- * Usa el token guardado en sesión (OTP). Si no hay base URL configurada, no se hace la petición.
+ * Body: solo risk_item; los beneficiaries se transforman con toPostSalesBeneficiary (action en cada uno) y van dentro del risk_item.
  *
- * @param riskItemId - UUID del risk item
- * @param riskItem - Risk item completo (opcional, se envía en el body si se proporciona)
+ * @param riskItem - Risk item completo (obligatorio)
  * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
  */
 export async function postSalesSyncBeneficiaries(
-  riskItemId: string,
-  riskItem: RiskItem | null,
+  riskItem: RiskItem,
   beneficiariesWithAction: { payload: BeneficiaryPayload; action: PostSalesBeneficiaryAction }[]
 ): Promise<void> {
   const baseUrl = getPostSalesBaseUrl();
   if (!baseUrl) return;
 
   const token = getStoredAccessToken();
-  const body: PostSalesRequestBody = {
-    risk_item_id: riskItemId,
-    beneficiaries: beneficiariesWithAction.map(({ payload, action }) =>
-      toPostSalesBeneficiary(payload, action)
-    ),
+  const beneficiaries = beneficiariesWithAction.map(({ payload, action }) =>
+    toPostSalesBeneficiary(payload, action)
+  );
+  const riskItemForPostSales: RiskItemForPostSales = {
+    ...riskItem,
+    beneficiaries,
   };
-  if (riskItem && Object.keys(riskItem).length > 0) {
-    body.risk_item = riskItem;
-  }
+  const body: PostSalesRequestBody = {
+    risk_item: riskItemForPostSales,
+  };
 
   const url = `${baseUrl}/api/integrations/post-sales`;
 
