@@ -87,9 +87,11 @@ interface TripSummaryProps {
   email: string;
   onNext: (riskItem: RiskItem) => void;
   onBack: () => void;
+  /** Si el GET risk-items devuelve lista vacía, se invalida sesión y se redirige al inicio (paso 1). */
+  onNoPlans?: () => void;
 }
 
-export const TripSummary = ({ email, onNext, onBack }: TripSummaryProps) => {
+export const TripSummary = ({ email, onNext, onBack, onNoPlans }: TripSummaryProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [riskItems, setRiskItems] = useState<RiskItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,7 +131,14 @@ export const TripSummary = ({ email, onNext, onBack }: TripSummaryProps) => {
         return res.json();
       })
       .then((json: { data?: RiskItem[] }) => {
-        if (!cancelled) setRiskItems(Array.isArray(json?.data) ? json.data : []);
+        if (cancelled) return;
+        const list = Array.isArray(json?.data) ? json.data : [];
+        setRiskItems(list);
+        // Si no tiene ningún plan: avisar, invalidar sesión y volver al inicio
+        if (list.length === 0 && onNoPlans) {
+          toast.info(t.tripSummary.noPlans);
+          onNoPlans();
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -144,7 +153,7 @@ export const TripSummary = ({ email, onNext, onBack }: TripSummaryProps) => {
     return () => {
       cancelled = true;
     };
-  }, [email, t.tripSummary.errorLoadingPlans]);
+  }, [email, t.tripSummary.errorLoadingPlans, t.tripSummary.noPlans, onNoPlans]);
 
   if (loading) {
     return (

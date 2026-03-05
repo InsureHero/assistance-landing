@@ -85,6 +85,14 @@ const BookingFlowInner = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   }, []);
 
+  const handleNoPlans = useCallback(() => {
+    invalidateSessionQuietly();
+    setCurrentStep(1);
+    setEmail("");
+    setSelectedRiskItem(null);
+    setTravelers([]);
+  }, []);
+
   // Restaurar paso y datos si hay token OTP válido
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -193,6 +201,7 @@ const BookingFlowInner = () => {
                   handleNextStep();
                 }}
                 onBack={handlePreviousStep}
+                onNoPlans={handleNoPlans}
               />
             )}
             {currentStep === 3 && (
