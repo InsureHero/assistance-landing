@@ -12,136 +12,24 @@ import type { Traveler } from "../BookingFlow";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { RiskItem } from "@/services/risk_item.service";
 import { patchBeneficiaries, patchRiskItemMetadata } from "@/services/risk_item.service";
-import type { BeneficiaryPayload, BeneficiaryOrClaimant } from "@/services/risk_item.service";
+import type { BeneficiaryPayload } from "@/services/risk_item.service";
 import {
   postSalesSyncBeneficiaries,
   getPostSalesBaseUrl,
   type PostSalesBeneficiaryAction,
 } from "@/services/post_sales.service";
 import Link from "next/link";
-
-/** Códigos ISO de países (documentCountry). */
-const COUNTRIES: { code: string; name: string }[] = [
-  { code: "AR", name: "Argentina" },
-  { code: "AU", name: "Australia" },
-  { code: "BH", name: "Baréin" },
-  { code: "BR", name: "Brasil" },
-  { code: "CL", name: "Chile" },
-  { code: "CO", name: "Colombia" },
-  { code: "CR", name: "Costa Rica" },
-  { code: "DO", name: "República Dominicana" },
-  { code: "DZ", name: "Argelia" },
-  { code: "AE", name: "Emiratos Árabes" },
-  { code: "EC", name: "Ecuador" },
-  { code: "EG", name: "Egipto" },
-  { code: "ES", name: "España" },
-  { code: "GR", name: "Grecia" },
-  { code: "GT", name: "Guatemala" },
-  { code: "HN", name: "Honduras" },
-  { code: "ID", name: "Indonesia" },
-  { code: "IE", name: "Irlanda" },
-  { code: "IN", name: "India" },
-  { code: "IT", name: "Italia" },
-  { code: "JO", name: "Jordania" },
-  { code: "KW", name: "Kuwait" },
-  { code: "LB", name: "Líbano" },
-  { code: "MT", name: "Malta" },
-  { code: "MX", name: "México" },
-  { code: "NI", name: "Nicaragua" },
-  { code: "OM", name: "Omán" },
-  { code: "PA", name: "Panamá" },
-  { code: "PE", name: "Perú" },
-  { code: "PH", name: "Filipinas" },
-  { code: "PT", name: "Portugal" },
-  { code: "PY", name: "Paraguay" },
-  { code: "QA", name: "Qatar" },
-  { code: "SA", name: "Arabia Saudita" },
-  { code: "SV", name: "El Salvador" },
-  { code: "SY", name: "Siria" },
-  { code: "TN", name: "Túnez" },
-  { code: "UY", name: "Uruguay" },
-  { code: "VE", name: "Venezuela" },
-  { code: "YE", name: "Yemen" },
-];
-
-/** Tipos fiscales para México (códigos según API). */
-const FISCAL_TYPES = [
-  { value: "1004", label: "RFC (5)" },
-  { value: "1005", label: "Cédula Valor Fiscal (6)" },
-  { value: "2", label: "Pasaporte (2)" },
-  { value: "1009", label: "Cédula de identidad (10)" },
-  { value: "1", label: "Cédula (1)" },
-];
-
-const SOURCE_LANDING = "IH_LANDING_BENEFICIARIES";
-
-/** Máximo de beneficiarios permitidos por risk item. */
-const MAX_BENEFICIARIES = 10;
-
-/** Key para recordar si ya sincronizamos este risk item con post-sales (primera vez = create, siguientes = edit). */
-function getPostSalesSyncedKey(riskItemId: string): string {
-  return `post_sales_synced_${riskItemId}`;
-}
-
-/** Crea un traveler vacío. Para nuevo viajero desde el landing usar createEmptyTraveler(false) → isTraveler: true, isHolder: false. */
-function createEmptyTraveler(isHolder: boolean): Traveler {
-  return {
-    name: "",
-    lastname: "",
-    email: "",
-    isHolder,
-    isTraveler: !isHolder,
-    dateOfBirth: "",
-    fiscalType: "1004",
-    fiscalId: "",
-    documentCountry: "",
-    mobilePrefix: "",
-    phone: "",
-  };
-}
-
-function getAge(dateOfBirth: string): number | null {
-  if (!dateOfBirth) return null;
-  const birth = new Date(dateOfBirth);
-  if (Number.isNaN(birth.getTime())) return null;
-  const today = new Date();
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
-  return age;
-}
-
-function isMinor(dateOfBirth: string): boolean {
-  const age = getAge(dateOfBirth);
-  return age !== null && age < 18;
-}
-
-/**
- * Valida si un traveler tiene todos los datos obligatorios completos.
- * Email, código de país (mobilePrefix) y número de celular (phone) son obligatorios solo cuando isHolder: true.
- * Cuando isTraveler: true e isHolder: false, esos 3 campos son opcionales.
- */
-function isTravelerComplete(traveler: Traveler): boolean {
-  if (!traveler.name?.trim() || !traveler.lastname?.trim()) return false;
-  if (!traveler.dateOfBirth?.trim()) return false;
-  if (!traveler.fiscalType?.trim() || !traveler.fiscalId?.trim()) return false;
-  if (!traveler.documentCountry?.trim()) return false;
-  if (traveler.isHolder) {
-    if (!traveler.email?.trim() || !traveler.mobilePrefix?.trim() || !traveler.phone?.trim()) return false;
-  }
-  return true;
-}
-
-/** Formatea fecha YYYY-MM-DD para mostrar en la card (ej. 1987-09-19 → 19/09/1987). */
-function formatDateForDisplay(isoDate: string): string {
-  if (!isoDate) return "";
-  const d = new Date(isoDate + "T12:00:00");
-  if (Number.isNaN(d.getTime())) return isoDate;
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-}
+import { COUNTRIES, FISCAL_TYPES, SOURCE_LANDING, MAX_BENEFICIARIES } from "@/lib/addTravelersConstants";
+import {
+  getPostSalesSyncedKey,
+  isPolicyPrivacyAccepted,
+  createEmptyTraveler,
+  isMinor,
+  isTravelerComplete,
+  formatDateForDisplay,
+  beneficiaryToTraveler,
+  travelerToBeneficiaryPayload,
+} from "@/lib/utils/addTravelersUtils";
 
 interface AddTravelersProps {
   riskItem: RiskItem | null;
@@ -149,82 +37,6 @@ interface AddTravelersProps {
   setTravelers: (travelers: Traveler[]) => void;
   onNext: () => void;
   onBack: () => void;
-}
-
-/** Lee un valor del objeto API que puede venir en snake_case o camelCase. */
-function fromApi<T = string>(raw: Record<string, unknown>, snake: string, camel: string): T | undefined {
-  const v = raw[snake] ?? raw[camel];
-  return v as T | undefined;
-}
-
-/** Convierte BeneficiaryOrClaimant del API a Traveler para la UI. Acepta snake_case y camelCase. El primer beneficiario es holder. */
-function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index: number): Traveler {
-  const b = beneficiary as Record<string, unknown>;
-  const isHolder = index === 0;
-
-  const firstName = (fromApi<string>(b, "first_name", "firstName") ?? beneficiary.firstName ?? "").trim();
-  const lastName = (fromApi<string>(b, "last_name", "lastName") ?? (b.lastname as string) ?? beneficiary.lastName ?? "").trim();
-  const fullName = (beneficiary.name ?? "").trim();
-  const parts = fullName.split(/\s+/).filter(Boolean);
-  const name = firstName || parts[0] || "";
-  const lastname = lastName || (parts.length > 1 ? parts.slice(1).join(" ") : "");
-
-  const dateOfBirth = (fromApi<string>(b, "date_of_birth", "dateOfBirth") ?? beneficiary.date_of_birth ?? "").trim();
-  const documentCountry = (fromApi<string>(b, "document_country", "documentCountry") ?? beneficiary.document_country ?? "").trim();
-  const fiscalType = (fromApi<string>(b, "fiscal_type", "fiscalType") ?? beneficiary.fiscal_type ?? "1004").trim() || "1004";
-  const fiscalId = (fromApi<string>(b, "fiscal_id", "fiscalId") ?? beneficiary.fiscal_id ?? beneficiary.document_number ?? "").trim();
-  const email = (beneficiary.email ?? (b.email as string) ?? "").trim();
-  const mobilePrefix = (fromApi<string>(b, "mobile_prefix", "mobilePrefix") ?? beneficiary.mobile_prefix ?? "").trim();
-  const phone = (beneficiary.phone ?? (b.phone as string) ?? "").trim();
-  const source = beneficiary.source ?? (b.source as string);
-  const added_at = beneficiary.added_at ?? (b.added_at as string);
-  // Leer isTraveler del API (snake_case o camelCase). Holder puede ser true o false; no-holder por defecto true.
-  const isTravelerRaw = fromApi<boolean>(b, "is_traveler", "isTraveler") ?? beneficiary.isTraveler;
-  const isTraveler = typeof isTravelerRaw === "boolean" ? isTravelerRaw : !isHolder;
-
-  return {
-    name,
-    lastname,
-    email,
-    isHolder,
-    isTraveler,
-    dateOfBirth,
-    fiscalType,
-    fiscalId,
-    documentCountry,
-    mobilePrefix,
-    phone,
-    source,
-    added_at,
-    existingFromRiskItem: true,
-  };
-}
-
-/** Convierte Traveler de la UI a BeneficiaryPayload para el API. */
-function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPayload {
-  // Holder: no modificar source ni added_at (preservar valores existentes).
-  // Resto: usar SOURCE_LANDING y added_at (fecha actual si es nuevo).
-  const source = traveler.isHolder
-    ? (traveler.source ?? "")
-    : (traveler.source ?? SOURCE_LANDING);
-  const added_at = traveler.isHolder
-    ? (traveler.added_at ?? "")
-    : (traveler.added_at ?? new Date().toISOString());
-  return {
-    name: traveler.name,
-    lastname: traveler.lastname,
-    email: traveler.email || undefined,
-    isHolder: traveler.isHolder,
-    isTraveler: traveler.isTraveler,
-    dateOfBirth: traveler.dateOfBirth,
-    fiscalType: traveler.fiscalType,
-    fiscalId: traveler.fiscalId,
-    documentCountry: traveler.documentCountry,
-    mobilePrefix: traveler.mobilePrefix || undefined,
-    phone: traveler.phone || undefined,
-    source,
-    added_at,
-  };
 }
 
 export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack }: AddTravelersProps) => {
@@ -248,15 +60,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
         sessionStorage.setItem(getPostSalesSyncedKey(riskItemId), "true");
       }
     }
-    const privacyPolicy = riskItem?.metadata?.privacy_policy;
-    const policyPrivacy =
-      privacyPolicy && typeof privacyPolicy === "object" && "policy_privacy" in privacyPolicy
-        ? (privacyPolicy as { policy_privacy?: unknown }).policy_privacy
-        : undefined;
-    const accepted =
-      policyPrivacy === true ||
-      (typeof policyPrivacy === "string" && policyPrivacy.toLowerCase() === "true");
-    setPrivacyAccepted(!!accepted);
+    setPrivacyAccepted(isPolicyPrivacyAccepted(riskItem?.metadata));
   }, [riskItem, setTravelers]);
 
   const validateAndGetError = (): string | null => {
@@ -323,23 +127,22 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
   };
 
   const handleEditTraveler = (index: number) => {
-    const t = travelers[index];
-    // Asegurar que todos los campos existan (valores por defecto si faltan) para que el formulario muestre los datos actuales
+    const traveler = travelers[index];
     const withDefaults: Traveler = {
-      ...createEmptyTraveler(t.isHolder),
-      ...t,
-      name: t.name ?? "",
-      lastname: t.lastname ?? "",
-      dateOfBirth: t.dateOfBirth ?? "",
-      documentCountry: t.documentCountry ?? "",
-      fiscalType: t.fiscalType || "1004",
-      fiscalId: t.fiscalId ?? "",
-      email: t.email ?? "",
-      mobilePrefix: t.mobilePrefix ?? "",
-      phone: t.phone ?? "",
-      source: t.source,
-      added_at: t.added_at,
-      isTraveler: typeof t.isTraveler === "boolean" ? t.isTraveler : !t.isHolder,
+      ...createEmptyTraveler(traveler.isHolder),
+      ...traveler,
+      name: traveler.name ?? "",
+      lastname: traveler.lastname ?? "",
+      dateOfBirth: traveler.dateOfBirth ?? "",
+      documentCountry: traveler.documentCountry ?? "",
+      fiscalType: traveler.fiscalType || "1004",
+      fiscalId: traveler.fiscalId ?? "",
+      email: traveler.email ?? "",
+      mobilePrefix: traveler.mobilePrefix ?? "",
+      phone: traveler.phone ?? "",
+      source: traveler.source,
+      added_at: traveler.added_at,
+      isTraveler: typeof traveler.isTraveler === "boolean" ? traveler.isTraveler : !traveler.isHolder,
     };
     setCurrentTraveler(withDefaults);
     setEditingIndex(index);
@@ -403,19 +206,10 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
           policy_privacy: privacyAccepted,
         },
       };
-      // Saber si la política ya estaba aceptada en el risk item (para no mostrar mensaje confuso si falla el PATCH)
-      const existingPrivacy = riskItem?.metadata?.privacy_policy as { policy_privacy?: unknown } | undefined;
-      const alreadyHadPrivacyAccepted =
-        existingPrivacy &&
-        typeof existingPrivacy === "object" &&
-        "policy_privacy" in existingPrivacy &&
-        (existingPrivacy.policy_privacy === true ||
-          (typeof existingPrivacy.policy_privacy === "string" &&
-            existingPrivacy.policy_privacy.toLowerCase() === "true"));
+      const alreadyHadPrivacyAccepted = isPolicyPrivacyAccepted(riskItem?.metadata);
       try {
         await patchRiskItemMetadata(riskItemId, metadata);
       } catch {
-        // No bloquear el flujo: guardar beneficiarios igual. Solo avisar si era la primera vez que persistíamos la aceptación.
         if (privacyAccepted && !alreadyHadPrivacyAccepted) {
           toast.warning(t.addTravelers.privacyMetadataNotSaved);
         }
