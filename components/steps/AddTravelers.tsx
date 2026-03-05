@@ -202,8 +202,14 @@ function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index: number
 
 /** Convierte Traveler de la UI a BeneficiaryPayload para el API. */
 function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPayload {
-  const source = traveler.source ?? SOURCE_LANDING;
-  const added_at = traveler.added_at ?? new Date().toISOString();
+  // Holder: no modificar source ni added_at (preservar valores existentes).
+  // Resto: usar SOURCE_LANDING y added_at (fecha actual si es nuevo).
+  const source = traveler.isHolder
+    ? (traveler.source ?? "")
+    : (traveler.source ?? SOURCE_LANDING);
+  const added_at = traveler.isHolder
+    ? (traveler.added_at ?? "")
+    : (traveler.added_at ?? new Date().toISOString());
   return {
     name: traveler.name,
     lastname: traveler.lastname,
@@ -288,9 +294,10 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       const updated = [...travelers];
       const existing = travelers[editingIndex];
       const toSave: Traveler = { ...currentTraveler };
-      // No modificar source si el viajero ya lo tenía (ej. holder con "VIDANTA_CALLCENTER")
-      if (existing.source != null && String(existing.source).trim() !== "") {
-        toSave.source = existing.source;
+      // Holder: no modificar source ni added_at (preservar valores existentes).
+      if (existing.isHolder) {
+        if (existing.source != null && String(existing.source).trim() !== "") toSave.source = existing.source;
+        if (existing.added_at != null && String(existing.added_at).trim() !== "") toSave.added_at = existing.added_at;
       }
       updated[editingIndex] = toSave;
       setTravelers(updated);
@@ -444,7 +451,8 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
   };
 
   const allTravelersComplete = travelers.length > 0 && travelers.every(isTravelerComplete);
-  const canContinue = allTravelersComplete && privacyAccepted;
+  const hasAtLeastOneTraveler = travelers.some((t) => t.isTraveler === true);
+  const canContinue = allTravelersComplete && privacyAccepted && hasAtLeastOneTraveler;
 
   const selectClass = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
