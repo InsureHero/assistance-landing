@@ -87,7 +87,15 @@ function fromApi<T = string>(raw: Record<string, unknown>, snake: string, camel:
   return v as T | undefined;
 }
 
-/** Convierte BeneficiaryOrClaimant del API a Traveler para la UI. Acepta snake_case y camelCase. El primer beneficiario es holder. */
+/** Keys del beneficiario que usamos en la UI; el resto se guarda en _passthrough y se reenvía sin tocar. */
+const BENEFICIARY_READ_KEYS = new Set([
+  "first_name", "firstName", "last_name", "lastName", "lastname", "name", "maternalLastName",
+  "document_number", "date_of_birth", "dateOfBirth", "document_country", "documentCountry",
+  "fiscal_type", "fiscalType", "fiscal_id", "fiscalId", "email", "phone", "mobile_prefix", "mobilePrefix",
+  "source", "added_at", "is_holder", "isHolder", "is_traveler", "isTraveler", "insuredId", "insured_id",
+]);
+
+/** Convierte BeneficiaryOrClaimant del API a Traveler para la UI. Acepta snake_case y camelCase. El primer beneficiario es holder. Campos no usados se guardan en _passthrough. */
 export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index: number): Traveler {
   const b = beneficiary as Record<string, unknown>;
   const isHolder = index === 0;
@@ -112,6 +120,11 @@ export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index:
   const isTravelerRaw = fromApi<boolean>(b, "is_traveler", "isTraveler") ?? beneficiary.isTraveler;
   const isTraveler = typeof isTravelerRaw === "boolean" ? isTravelerRaw : !isHolder;
 
+  const passthrough: Record<string, unknown> = {};
+  for (const key of Object.keys(b)) {
+    if (!BENEFICIARY_READ_KEYS.has(key)) passthrough[key] = b[key];
+  }
+
   return {
     name,
     lastname,
@@ -127,11 +140,12 @@ export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index:
     source,
     added_at,
     insuredId,
+    _passthrough: Object.keys(passthrough).length > 0 ? passthrough : undefined,
     existingFromRiskItem: true,
   };
 }
 
-/** Convierte Traveler de la UI a BeneficiaryPayload para el API. Holder: no modificar source ni added_at. Resto: SOURCE_LANDING y added_at. */
+/** Convierte Traveler de la UI a BeneficiaryPayload para el API. Holder: no modificar source ni added_at. Resto: SOURCE_LANDING y added_at. Campos en _passthrough se reenvían sin modificar. */
 export function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPayload {
   const source = traveler.isHolder
     ? (traveler.source ?? "")
@@ -139,7 +153,8 @@ export function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPay
   const added_at = traveler.isHolder
     ? (traveler.added_at ?? "")
     : (traveler.added_at ?? new Date().toISOString());
-  return {
+  const base: BeneficiaryPayload = {
+    ...(traveler._passthrough ?? {}),
     name: traveler.name,
     lastname: traveler.lastname,
     email: traveler.email || undefined,
@@ -155,4 +170,5 @@ export function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPay
     added_at,
     insuredId: traveler.insuredId,
   };
+  return base;
 }
