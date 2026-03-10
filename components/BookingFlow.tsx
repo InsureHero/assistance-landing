@@ -32,6 +32,8 @@ export type Traveler = {
   phone: string;
   source?: string;
   added_at?: string;
+  /** Identificador del asegurado asociado al beneficiario (si lo devuelve el backend). */
+  insuredId?: string;
   /** Legacy / compatibilidad con UI que mostraba nombre completo, nacionalidad, pasaporte */
   passportNumber?: string;
   nationality?: string;

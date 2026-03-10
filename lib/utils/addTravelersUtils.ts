@@ -108,6 +108,7 @@ export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index:
   const phone = (beneficiary.phone ?? (b.phone as string) ?? "").trim();
   const source = beneficiary.source ?? (b.source as string);
   const added_at = beneficiary.added_at ?? (b.added_at as string);
+  const insuredId = (beneficiary as { insuredId?: string }).insuredId ?? (b.insured_id as string);
   const isTravelerRaw = fromApi<boolean>(b, "is_traveler", "isTraveler") ?? beneficiary.isTraveler;
   const isTraveler = typeof isTravelerRaw === "boolean" ? isTravelerRaw : !isHolder;
 
@@ -125,6 +126,7 @@ export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index:
     phone,
     source,
     added_at,
+    insuredId,
     existingFromRiskItem: true,
   };
 }
@@ -151,5 +153,6 @@ export function travelerToBeneficiaryPayload(traveler: Traveler): BeneficiaryPay
     phone: traveler.phone || undefined,
     source,
     added_at,
+    insuredId: traveler.insuredId,
   };
 }

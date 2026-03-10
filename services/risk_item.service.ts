@@ -45,6 +45,8 @@ export interface BeneficiaryOrClaimant {
   mobile_prefix?: string;
   source?: string;
   added_at?: string;
+  /** Identificador del asegurado asociado al beneficiario (lo devolvió el backend). */
+  insuredId?: string;
 }
 
 export interface RiskItem {
@@ -136,6 +138,8 @@ export interface BeneficiaryPayload {
   phone?: string;
   source: string;
   added_at: string;
+   /** Identificador del asegurado asociado al beneficiario (si el backend lo envió). */
+  insuredId?: string;
 }
 
 /** Convierte un beneficiario a formato snake_case para el API postventa. */
@@ -156,6 +160,8 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
   if (p.email != null && String(p.email).trim() !== "") out.email = String(p.email).trim();
   if (p.mobilePrefix != null && String(p.mobilePrefix).trim() !== "") out.mobile_prefix = String(p.mobilePrefix).trim();
   if (p.phone != null && String(p.phone).trim() !== "") out.phone = String(p.phone).trim();
+  // insuredId es opcional y solo se reenvía si vino del backend.
+  if (p.insuredId != null && String(p.insuredId).trim() !== "") out.insuredId = String(p.insuredId).trim();
   return out;
 }
 
