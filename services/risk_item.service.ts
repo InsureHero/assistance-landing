@@ -28,6 +28,7 @@ export interface InsuredSubject {
   language?: string;
 }
 
+/** Beneficiario tal como viene del backend. Campos extra que envíe el API se preservan y reenvían sin modificar. */
 export interface BeneficiaryOrClaimant {
   firstName?: string;
   lastName?: string;
@@ -45,6 +46,8 @@ export interface BeneficiaryOrClaimant {
   mobile_prefix?: string;
   source?: string;
   added_at?: string;
+  insuredId?: string;
+  [key: string]: unknown;
 }
 
 export interface RiskItem {
@@ -122,6 +125,7 @@ export async function getRiskItemsByEmail(
   return [];
 }
 
+/** Payload para enviar al API. Incluye campos que editamos y cualquier otro que venga del backend (passthrough). */
 export interface BeneficiaryPayload {
   name: string;
   lastname: string;
@@ -136,9 +140,16 @@ export interface BeneficiaryPayload {
   phone?: string;
   source: string;
   added_at: string;
+  insuredId?: string;
+  [key: string]: unknown;
 }
 
-/** Convierte un beneficiario a formato snake_case para el API postventa. */
+const BENEFICIARY_PAYLOAD_KNOWN_KEYS = new Set([
+  "name", "lastname", "email", "isHolder", "isTraveler", "dateOfBirth", "fiscalType", "fiscalId",
+  "documentCountry", "mobilePrefix", "phone", "source", "added_at", "insuredId",
+]);
+
+/** Convierte un beneficiario a formato snake_case para el API postventa. Los campos extra se reenvían tal cual. */
 function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, unknown> {
   const dateOfBirth = toIsoDate(p.dateOfBirth);
   const out: Record<string, unknown> = {
@@ -156,6 +167,10 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
   if (p.email != null && String(p.email).trim() !== "") out.email = String(p.email).trim();
   if (p.mobilePrefix != null && String(p.mobilePrefix).trim() !== "") out.mobile_prefix = String(p.mobilePrefix).trim();
   if (p.phone != null && String(p.phone).trim() !== "") out.phone = String(p.phone).trim();
+  if (p.insuredId != null && String(p.insuredId).trim() !== "") out.insuredId = String(p.insuredId).trim();
+  for (const key of Object.keys(p)) {
+    if (!BENEFICIARY_PAYLOAD_KNOWN_KEYS.has(key)) (out as Record<string, unknown>)[key] = p[key];
+  }
   return out;
 }
 
