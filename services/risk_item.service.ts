@@ -149,23 +149,23 @@ const BENEFICIARY_PAYLOAD_KNOWN_KEYS = new Set([
   "documentCountry", "mobilePrefix", "phone", "source", "added_at", "insuredId",
 ]);
 
-/** Convierte un beneficiario a formato snake_case para el API postventa. Los campos extra se reenvían tal cual. */
+/** Convierte un beneficiario a formato camelCase para el API postventa (modelo Vidanta). Los campos extra se reenvían tal cual. */
 function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, unknown> {
   const dateOfBirth = toIsoDate(p.dateOfBirth);
   const out: Record<string, unknown> = {
     name: p.name?.trim() ?? "",
     lastname: p.lastname?.trim() ?? "",
-    is_holder: p.isHolder,
-    is_traveler: p.isTraveler,
-    date_of_birth: dateOfBirth,
-    fiscal_type: p.fiscalType?.trim() ?? "1004",
-    fiscal_id: (p.fiscalId ?? "").trim(),
-    document_country: (p.documentCountry ?? "").trim(),
+    isHolder: p.isHolder,
+    isTraveler: p.isTraveler,
+    dateOfBirth,
+    fiscalType: p.fiscalType?.trim() ?? "1004",
+    fiscalId: (p.fiscalId ?? "").trim(),
+    documentCountry: (p.documentCountry ?? "").trim(),
     source: (p.source ?? "").trim(),
     added_at: (p.added_at ?? "").trim(),
   };
   if (p.email != null && String(p.email).trim() !== "") out.email = String(p.email).trim();
-  if (p.mobilePrefix != null && String(p.mobilePrefix).trim() !== "") out.mobile_prefix = String(p.mobilePrefix).trim();
+  if (p.mobilePrefix != null && String(p.mobilePrefix).trim() !== "") out.mobilePrefix = String(p.mobilePrefix).trim();
   if (p.phone != null && String(p.phone).trim() !== "") out.phone = String(p.phone).trim();
   if (p.insuredId != null && String(p.insuredId).trim() !== "") out.insuredId = String(p.insuredId).trim();
   for (const key of Object.keys(p)) {
@@ -177,7 +177,7 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
 /**
  * Envía la lista completa de beneficiarios (API postventa).
  * PUT /api/postsales/v1/risk-items/{riskItemId}/beneficiaries
- * Body en snake_case (date_of_birth, fiscal_type, is_holder, etc.).
+ * Body en camelCase (dateOfBirth, fiscalType, isHolder, etc.) — modelo Vidanta.
  */
 export async function putBeneficiaries(
   riskItemId: string,
