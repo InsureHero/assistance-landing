@@ -53,11 +53,7 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
       setOtpSent(true);
       toast.success(t.otp.codeSent);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message === "OTP_CODE_SENT_INVALID_EMAIL" ||
-          error.message === "OTP_INVALID_EMAIL")
-      ) {
+      if (error instanceof Error && error.message === "OTP_INVALID_EMAIL") {
         // Mostrar mensaje de correo incorrecto según idioma (ES/EN).
         toast.error(t.otp.invalidEmail);
       } else {
@@ -75,11 +71,7 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
       await sendOtp(email.trim().toLowerCase());
       toast.success(t.otp.codeSent);
     } catch (error) {
-      if (
-        error instanceof Error &&
-        (error.message === "OTP_CODE_SENT_INVALID_EMAIL" ||
-          error.message === "OTP_INVALID_EMAIL")
-      ) {
+      if (error instanceof Error && error.message === "OTP_INVALID_EMAIL") {
         toast.error(t.otp.invalidEmail);
       } else {
         toast.error(t.otp.errorSendingCode);

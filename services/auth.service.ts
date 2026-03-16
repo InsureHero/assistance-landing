@@ -129,11 +129,6 @@ export async function requestPostventaOtp(email: string): Promise<void> {
       msg || `Error al solicitar código: ${response.status} ${response.statusText}`
     );
   }
-  // Caso especial: el backend responde 200 con mensaje "Código enviado al correo",
-  // pero en el flujo del landing esto se considera un correo inválido / no permitido.
-  if (json?.data?.message === "Código enviado al correo") {
-    throw new Error("OTP_CODE_SENT_INVALID_EMAIL");
-  }
 }
 
 /**
