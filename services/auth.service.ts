@@ -103,16 +103,31 @@ export async function requestPostventaOtp(email: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email: email.trim().toLowerCase() }),
   });
-  if (!response.ok) {
-    const text = await response.text();
-    let msg = text;
+  const text = await response.text();
+  let msg = text;
+  let json:
+    | {
+        data?: { message?: string };
+        details?: string;
+      }
+    | undefined;
+  if (text.trim()) {
     try {
-      const j = JSON.parse(text) as { data?: { message?: string }; details?: string };
-      msg = j.data?.message ?? j.details ?? text;
+      json = JSON.parse(text) as typeof json;
+      msg = json?.data?.message ?? json?.details ?? text;
     } catch {
       // usar text tal cual
     }
-    throw new Error(msg ? `Error al solicitar código: ${msg}` : `Error al solicitar código: ${response.status} ${response.statusText}`);
+  }
+  if (!response.ok) {
+    // Para el flujo de login, un 400 en este endpoint significa correo inválido / no permitido.
+    if (response.status === 400) {
+      throw new Error("OTP_INVALID_EMAIL");
+    }
+    // Otros errores mantienen un mensaje genérico.
+    throw new Error(
+      msg || `Error al solicitar código: ${response.status} ${response.statusText}`
+    );
   }
 }
 

@@ -42,7 +42,16 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
   const sendButtonDisabled = !emailValid || sendingOtp;
   const verifyButtonDisabled = verifying || otp.replace(/\D/g, "").length !== 6;
 
-  const handleSendOtp = async () => {
+  const handleOtpSendError = (error: unknown) => {
+    if (error instanceof Error && error.message === "OTP_INVALID_EMAIL") {
+      // Mostrar mensaje de correo incorrecto según idioma (ES/EN).
+      toast.error(t.otp.invalidEmail);
+    } else {
+      toast.error(t.otp.errorSendingCode);
+    }
+  };
+
+  const performSendOtp = async (isResend: boolean) => {
     if (!emailValid) {
       toast.error(t.otp.invalidEmail);
       return;
@@ -50,27 +59,20 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
     setSendingOtp(true);
     try {
       await sendOtp(email.trim().toLowerCase());
-      setOtpSent(true);
+      if (!isResend) {
+        setOtpSent(true);
+      }
       toast.success(t.otp.codeSent);
-    } catch {
-      toast.error(t.otp.errorSendingCode);
+    } catch (error) {
+      handleOtpSendError(error);
     } finally {
       setSendingOtp(false);
     }
   };
 
-  const handleResendOtp = async () => {
-    if (!emailValid) return;
-    setSendingOtp(true);
-    try {
-      await sendOtp(email.trim().toLowerCase());
-      toast.success(t.otp.codeSent);
-    } catch {
-      toast.error(t.otp.errorSendingCode);
-    } finally {
-      setSendingOtp(false);
-    }
-  };
+  const handleSendOtp = () => performSendOtp(false);
+
+  const handleResendOtp = () => performSendOtp(true);
 
   const handleVerifyOtp = async () => {
     const digits = otp.replace(/\D/g, "").slice(0, 6);
