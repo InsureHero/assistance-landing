@@ -186,19 +186,8 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       } catch {
         // seguir sin IP si falla
       }
-      // En local (next dev) el servidor ve la IP como ::1 o 127.0.0.1. Fallback: obtener IP pública desde el cliente.
-      const isLocalhost = clientIp === "::1" || clientIp === "127.0.0.1" || clientIp === "::ffff:127.0.0.1";
-      if (isLocalhost && typeof window !== "undefined") {
-        try {
-          const pubRes = await fetch("https://api.ipify.org?format=json", { signal: AbortSignal.timeout(3000) });
-          if (pubRes.ok) {
-            const pub = await pubRes.json();
-            if (pub?.ip?.trim()) clientIp = pub.ip.trim();
-          }
-        } catch {
-          // mantener clientIp (::1 o unknown)
-        }
-      }
+      // Solo usamos servicio interno (/api/my-ip). Si devuelve loopback en local,
+      // mantenemos ese valor o "unknown" sin llamar servicios externos.
       const metadata = {
         privacy_policy: {
           client_ip: clientIp,
