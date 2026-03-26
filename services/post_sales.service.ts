@@ -21,17 +21,21 @@ export function getPostSalesBaseUrl(): string {
 
 export type PostSalesBeneficiaryAction = "create" | "edit";
 
-/** Beneficiario para el body de POST post-sales (solo campos necesarios). */
+/** Beneficiario para el body de POST post-sales. */
 export interface PostSalesBeneficiary {
   name: string;
   lastname: string;
   email?: string;
   isHolder: boolean;
+  isTraveler?: boolean;
   dateOfBirth: string;
   fiscalType: string;
   fiscalId: string;
+  documentCountry?: string;
   mobilePrefix?: string;
   phone?: string;
+  source?: string;
+  added_at?: string;
   action: PostSalesBeneficiaryAction;
 }
 
@@ -40,10 +44,8 @@ export type RiskItemForPostSales = Omit<RiskItem, "beneficiaries"> & {
   beneficiaries: PostSalesBeneficiary[];
 };
 
-/** Body del POST /api/integrations/post-sales: solo risk_item (con beneficiaries transformados dentro). */
-export interface PostSalesRequestBody {
-  risk_item: RiskItemForPostSales;
-}
+/** Body del POST /api/integrations/post-sales: risk item directo (con beneficiaries transformados dentro). */
+export type PostSalesRequestBody = RiskItemForPostSales;
 
 /**
  * Convierte BeneficiaryPayload + action a PostSalesBeneficiary (camelCase para el API).
@@ -63,15 +65,19 @@ export function toPostSalesBeneficiary(
     action,
   };
   if (p.email != null && String(p.email).trim() !== "") out.email = String(p.email).trim();
+  if (p.isTraveler != null) out.isTraveler = p.isTraveler;
+  if (p.documentCountry != null && String(p.documentCountry).trim() !== "") out.documentCountry = String(p.documentCountry).trim();
   if (p.mobilePrefix != null && String(p.mobilePrefix).trim() !== "") out.mobilePrefix = String(p.mobilePrefix).trim();
   if (p.phone != null && String(p.phone).trim() !== "") out.phone = String(p.phone).trim();
+  if (p.source != null && String(p.source).trim() !== "") out.source = String(p.source).trim();
+  if (p.added_at != null && String(p.added_at).trim() !== "") out.added_at = String(p.added_at).trim();
   return out;
 }
 
 /**
  * Envía al API de integraciones post-venta.
  * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
- * Body: solo risk_item; los beneficiaries se transforman con toPostSalesBeneficiary (action en cada uno) y van dentro del risk_item.
+ * Body: risk item directo (sin wrapper); los beneficiaries se transforman con toPostSalesBeneficiary (action en cada uno).
  *
  * @param riskItem - Risk item completo (obligatorio)
  * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
@@ -91,9 +97,7 @@ export async function postSalesSyncBeneficiaries(
     ...riskItem,
     beneficiaries,
   };
-  const body: PostSalesRequestBody = {
-    risk_item: riskItemForPostSales,
-  };
+  const body: PostSalesRequestBody = riskItemForPostSales;
 
   const url = `${baseUrl}/api/integrations/post-sales`;
 
