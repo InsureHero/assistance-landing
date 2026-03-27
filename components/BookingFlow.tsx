@@ -78,6 +78,11 @@ const BookingFlowInner = () => {
 
   const totalSteps = 4;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    console.info("[landing] version: 1.0.0");
+  }, []);
+
   const handleNextStep = useCallback(() => {
     setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
   }, []);
