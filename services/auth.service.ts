@@ -158,18 +158,13 @@ export async function verifyPostventaOtp(
     }
   }
   if (!response.ok) {
-    const msg =
-      data.data?.message ??
-      (data as { details?: string }).details ??
-      data.error ??
-      (response.status === 400
-        ? "El código es incorrecto o ha expirado. Verifica el código e intenta de nuevo."
-        : response.status === 401
-          ? "El código ha expirado. Solicita un nuevo código."
-          : response.status === 404
-            ? "No encontramos una solicitud de código para este correo. Solicita un nuevo código."
-            : response.statusText);
-    throw new Error(msg || "Error al verificar el código");
+    if (response.status === 429) {
+      throw new Error("OTP_RATE_LIMITED");
+    }
+    if (response.status === 400 || response.status === 401 || response.status === 404) {
+      throw new Error("Código inválido o expirado.");
+    }
+    throw new Error(response.statusText || "Error al verificar el código");
   }
   // API postventa devuelve solo { data: { accessToken: string } }. No usar data.message como token.
   const token = data.data?.accessToken;

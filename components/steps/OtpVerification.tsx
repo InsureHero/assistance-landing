@@ -35,12 +35,17 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
   const [otpSent, setOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [otpAttempts, setOtpAttempts] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
   const { t } = useLanguage();
+
+  const OTP_MAX_ATTEMPTS = 3;
+  const maxAttemptsReached = otpAttempts >= OTP_MAX_ATTEMPTS;
 
   const emailTrimmed = String(email ?? "").trim();
   const emailValid = isValidEmail(emailTrimmed);
   const sendButtonDisabled = !emailValid || sendingOtp;
-  const verifyButtonDisabled = verifying || otp.replace(/\D/g, "").length !== 6;
+  const verifyButtonDisabled = verifying || isRateLimited || otp.replace(/\D/g, "").length !== 6;
 
   const handleOtpSendError = (error: unknown) => {
     if (error instanceof Error && error.message === "OTP_INVALID_EMAIL") {
@@ -72,7 +77,12 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
 
   const handleSendOtp = () => performSendOtp(false);
 
-  const handleResendOtp = () => performSendOtp(true);
+  const handleResendOtp = async () => {
+    await performSendOtp(true);
+    setOtpAttempts(0);
+    setIsRateLimited(false);
+    setOtp("");
+  };
 
   const handleVerifyOtp = async () => {
     const digits = otp.replace(/\D/g, "").slice(0, 6);
@@ -86,8 +96,18 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
       if (result.success) {
         toast.success(t.otp.verified);
         onNext();
-      } else if ("errorMessage" in result) {
-        toast.error(t.otp.errorVerifyingCode);
+      } else {
+        const errorMessage = "errorMessage" in result ? result.errorMessage : "";
+        if (errorMessage === "OTP_RATE_LIMITED") {
+          setIsRateLimited(true);
+          toast.error(t.otp.rateLimited);
+        } else {
+          const newAttempts = otpAttempts + 1;
+          setOtpAttempts(newAttempts);
+          if (newAttempts < OTP_MAX_ATTEMPTS) {
+            toast.error(t.otp.errorVerifyingCode);
+          }
+        }
       }
     } catch {
       toast.error(t.otp.errorVerifyingCode);
@@ -140,48 +160,71 @@ export const OtpVerification = ({ email, setEmail, onNext }: OtpVerificationProp
           </Button>
         ) : (
           <>
-            <div className="space-y-2">
-              <Label htmlFor="otp">{t.otp.verificationCode}</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder={t.otp.codePlaceholder}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                maxLength={6}
-                className="h-12 text-center text-xl tracking-widest font-semibold"
-              />
-              <p className="text-sm text-muted-foreground text-center">{t.otp.checkEmail}</p>
-            </div>
-            <div className="space-y-3">
-              <Button
-                onClick={handleVerifyOtp}
-                disabled={verifyButtonDisabled}
-                className="w-full h-12 text-base font-medium gradient-ocean hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
-              >
-                {verifying ? (
-                  <>
-                    {t.otp.sendingCode}
-                    <Loader2 className="ml-2 w-5 h-5 animate-spin" />
-                  </>
-                ) : (
-                  <>
-                    {t.otp.verifyAndContinue}
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </>
-                )}
-              </Button>
-              <Button variant="ghost" onClick={handleResendOtp} disabled={sendingOtp} className="w-full">
-                {sendingOtp ? (
-                  <>
-                    <Loader2 className="mr-2 w-4 h-4 animate-spin" />
-                    {t.otp.sendingCode}
-                  </>
-                ) : (
-                  t.otp.resendCode
-                )}
-              </Button>
-            </div>
+            {maxAttemptsReached ? (
+              <div className="space-y-3">
+                <p className="text-sm text-destructive text-center font-medium">{t.otp.maxAttemptsReached}</p>
+                <Button
+                  onClick={handleResendOtp}
+                  disabled={sendingOtp || isRateLimited}
+                  className="w-full h-12 text-base font-medium gradient-ocean hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  {sendingOtp ? (
+                    <>
+                      {t.otp.sendingCode}
+                      <Loader2 className="ml-2 w-5 h-5 animate-spin" />
+                    </>
+                  ) : (
+                    t.otp.requestNewCode
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="otp">{t.otp.verificationCode}</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder={t.otp.codePlaceholder}
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    maxLength={6}
+                    disabled={isRateLimited}
+                    className="h-12 text-center text-xl tracking-widest font-semibold"
+                  />
+                  <p className="text-sm text-muted-foreground text-center">{t.otp.checkEmail}</p>
+                </div>
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleVerifyOtp}
+                    disabled={verifyButtonDisabled}
+                    className="w-full h-12 text-base font-medium gradient-ocean hover:opacity-90 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {verifying ? (
+                      <>
+                        {t.otp.sendingCode}
+                        <Loader2 className="ml-2 w-5 h-5 animate-spin" />
+                      </>
+                    ) : (
+                      <>
+                        {t.otp.verifyAndContinue}
+                        <ArrowRight className="ml-2 w-5 h-5" />
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="ghost" onClick={handleResendOtp} disabled={sendingOtp || isRateLimited} className="w-full">
+                    {sendingOtp ? (
+                      <>
+                        <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                        {t.otp.sendingCode}
+                      </>
+                    ) : (
+                      t.otp.resendCode
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </>
         )}
       </CardContent>
