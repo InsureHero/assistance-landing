@@ -176,7 +176,7 @@ function beneficiaryPayloadToApiFormat(p: BeneficiaryPayload): Record<string, un
 
 /**
  * Envía la lista completa de beneficiarios (API postventa).
- * PUT /api/postsales/v1/risk-items/{riskItemId}/beneficiaries
+ * PUT /api/shield/v1/risk-items/{riskItemId}/beneficiaries
  * Body en camelCase (dateOfBirth, fiscalType, isHolder, etc.) — modelo Vidanta.
  */
 export async function putBeneficiaries(
