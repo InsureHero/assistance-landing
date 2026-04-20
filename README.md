@@ -86,3 +86,9 @@ yarn start
 - La página principal (`app/page.tsx`) es un Server Component que renderiza el BookingFlow
 - El contexto de idioma usa localStorage para persistir la preferencia del usuario
 - Las imágenes deben estar en `/public/assets/` y se acceden con `/assets/...`
+
+## Catalogo de errores de emision
+
+- Archivo: `docs/emission-error-catalog.csv`
+- Formato: CSV compatible con Excel (se puede abrir/editar en Excel y mantener versionado en Git).
+- Uso: mapear `error_code` a mensajes de usuario, plantilla de email, severidad y accion de notificacion.

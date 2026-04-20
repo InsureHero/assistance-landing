@@ -188,7 +188,7 @@ export async function putBeneficiaries(
     throw new Error("No hay token de sesión. Inicia sesión nuevamente.");
 
   const baseUrl = getBaseUrl();
-  const url = `${baseUrl || ""}/api/postsales/v1/risk-items/${encodeURIComponent(riskItemId)}/beneficiaries`;
+  const url = `${baseUrl || ""}/api/shield/v1/risk-items/${encodeURIComponent(riskItemId)}/beneficiaries`;
 
   const body = {
     beneficiaries: beneficiaries.map(beneficiaryPayloadToApiFormat),

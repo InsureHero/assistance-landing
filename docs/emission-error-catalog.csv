@@ -1,0 +1,2 @@
+error_code,error_name,mensaje_usuario,mensaje_email,severity,dispara_email,owner,retryable,template_email,canal,estado,notas
+EMISSION_GENERIC,Error de emision generico,"No pudimos emitir tu asistencia en este momento. Intentalo nuevamente o contacta soporte.","Se detecto un error de emision generico en la integracion. Revisar trazas y estado del proveedor.",high,yes,Integraciones,no,emission_error_default,email,activo,"Registro inicial (MVP) para mapear notificaciones por codigo de error."
