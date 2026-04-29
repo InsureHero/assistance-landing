@@ -87,12 +87,26 @@ function fromApi<T = string>(raw: Record<string, unknown>, snake: string, camel:
   return v as T | undefined;
 }
 
+/** Prioriza modelo camelCase (BeneficiaryOrClaimant); compatibilidad snake_case vía objeto crudo/fromApi. */
+function pickStr(...values: Array<string | undefined | null>): string {
+  for (const v of values) {
+    if (v == null) continue;
+    const s = String(v).trim();
+    if (s !== "") return s;
+  }
+  return "";
+}
+
 /** Keys del beneficiario que usamos en la UI; el resto se guarda en _passthrough y se reenvía sin tocar. */
 const BENEFICIARY_READ_KEYS = new Set([
   "first_name", "firstName", "last_name", "lastName", "lastname", "name", "maternalLastName",
-  "document_number", "date_of_birth", "dateOfBirth", "document_country", "documentCountry",
-  "fiscal_type", "fiscalType", "fiscal_id", "fiscalId", "email", "phone", "mobile_prefix", "mobilePrefix",
-  "source", "added_at", "is_holder", "isHolder", "is_traveler", "isTraveler", "insuredId", "insured_id",
+  "document_number", "documentNumber",
+  "date_of_birth", "dateOfBirth",
+  "document_country", "documentCountry",
+  "fiscal_type", "fiscalType", "fiscal_id", "fiscalId",
+  "email", "phone", "mobile_prefix", "mobilePrefix",
+  "source", "added_at", "addedAt",
+  "is_holder", "isHolder", "is_traveler", "isTraveler", "insuredId", "insured_id",
 ]);
 
 /** Convierte BeneficiaryOrClaimant del API a Traveler para la UI. Acepta snake_case y camelCase. El primer beneficiario es holder. Campos no usados se guardan en _passthrough. */
@@ -107,16 +121,38 @@ export function beneficiaryToTraveler(beneficiary: BeneficiaryOrClaimant, index:
   const name = firstName || parts[0] || "";
   const lastname = lastName || (parts.length > 1 ? parts.slice(1).join(" ") : "");
 
-  const dateOfBirth = (fromApi<string>(b, "date_of_birth", "dateOfBirth") ?? beneficiary.date_of_birth ?? "").trim();
-  const documentCountry = (fromApi<string>(b, "document_country", "documentCountry") ?? beneficiary.document_country ?? "").trim();
-  const fiscalType = (fromApi<string>(b, "fiscal_type", "fiscalType") ?? beneficiary.fiscal_type ?? "1004").trim() || "1004";
-  const fiscalId = (fromApi<string>(b, "fiscal_id", "fiscalId") ?? beneficiary.fiscal_id ?? beneficiary.document_number ?? "").trim();
-  const email = (beneficiary.email ?? (b.email as string) ?? "").trim();
-  const mobilePrefix = (fromApi<string>(b, "mobile_prefix", "mobilePrefix") ?? beneficiary.mobile_prefix ?? "").trim();
-  const phone = (beneficiary.phone ?? (b.phone as string) ?? "").trim();
-  const source = beneficiary.source ?? (b.source as string);
-  const added_at = beneficiary.added_at ?? (b.added_at as string);
-  const insuredId = (beneficiary as { insuredId?: string }).insuredId ?? (b.insured_id as string);
+  const dateOfBirth = pickStr(
+    beneficiary.dateOfBirth,
+    fromApi<string>(b, "date_of_birth", "dateOfBirth"),
+  );
+  const documentCountry = pickStr(
+    beneficiary.documentCountry,
+    fromApi<string>(b, "document_country", "documentCountry"),
+  );
+  const fiscalType =
+    pickStr(beneficiary.fiscalType, fromApi<string>(b, "fiscal_type", "fiscalType")) || "1004";
+  const fiscalId = pickStr(
+    beneficiary.fiscalId,
+    beneficiary.documentNumber,
+    fromApi<string>(b, "fiscal_id", "fiscalId"),
+    typeof b.document_number === "string" ? b.document_number : undefined,
+  );
+  const email = pickStr(beneficiary.email, b.email as string | undefined);
+  const mobilePrefix = pickStr(
+    beneficiary.mobilePrefix,
+    fromApi<string>(b, "mobile_prefix", "mobilePrefix"),
+  );
+  const phone = pickStr(beneficiary.phone, b.phone as string | undefined);
+  const source = pickStr(beneficiary.source, b.source as string | undefined);
+  const added_at = pickStr(
+    beneficiary.addedAt,
+    fromApi<string>(b, "added_at", "addedAt"),
+  );
+  const insuredIdVal = pickStr(
+    beneficiary.insuredId,
+    typeof b.insured_id === "string" ? b.insured_id : undefined,
+  );
+  const insuredId = insuredIdVal || undefined;
   const isTravelerRaw = fromApi<boolean>(b, "is_traveler", "isTraveler") ?? beneficiary.isTraveler;
   const isTraveler = typeof isTravelerRaw === "boolean" ? isTravelerRaw : !isHolder;
 

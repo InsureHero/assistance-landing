@@ -36,16 +36,16 @@ export interface BeneficiaryOrClaimant {
   phone?: string;
   email?: string;
   name?: string;
-  document_number?: string;
+  documentNumber?: string;
   isHolder?: boolean;
   isTraveler?: boolean;
-  date_of_birth?: string;
-  fiscal_type?: string;
-  fiscal_id?: string;
-  document_country?: string;
-  mobile_prefix?: string;
+  dateOfBirth?: string;
+  fiscalType?: string;
+  fiscalId?: string;
+  documentCountry?: string;
+  mobilePrefix?: string;
   source?: string;
-  added_at?: string;
+  addedAt?: string;
   insuredId?: string;
   [key: string]: unknown;
 }
