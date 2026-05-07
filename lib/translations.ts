@@ -20,6 +20,9 @@ export const translations = {
       sendingCode: "Sending...",
       errorSendingCode: "Could not send verification code. Please try again.",
       errorVerifyingCode: "Could not verify code. Please check the code and try again.",
+      rateLimited: "Too many attempts. Please try again later.",
+      maxAttemptsReached: "Invalid code. Please request a new one.",
+      requestNewCode: "Request New Code",
       connectionError: "Could not reach the server. Check that the API is running and NEXT_API_BASE_URL is correct (e.g. use another port if the API is not on the same as this app).",
     },
     tripSummary: {
@@ -149,6 +152,9 @@ export const translations = {
       sendingCode: "Enviando...",
       errorSendingCode: "No se pudo enviar el código de verificación. Intenta de nuevo.",
       errorVerifyingCode: "No se pudo verificar el código. Revisa el código e intenta de nuevo.",
+      rateLimited: "Demasiados intentos. Por favor intenta más tarde.",
+      maxAttemptsReached: "Código inválido. Solicita un nuevo código.",
+      requestNewCode: "Solicitar nuevo código",
       connectionError: "No se pudo conectar con el servidor. Comprueba que la API esté en ejecución y que NEXT_API_BASE_URL sea correcta (ej. otro puerto si la API no es la misma que esta app).",
     },
     tripSummary: {
