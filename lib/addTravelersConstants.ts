@@ -9,6 +9,7 @@ export const COUNTRIES: { code: string; name: string }[] = [
   { code: "AU", name: "Australia" },
   { code: "BH", name: "Baréin" },
   { code: "BR", name: "Brasil" },
+  { code: "CA", name: "Canadá" },
   { code: "CL", name: "Chile" },
   { code: "CO", name: "Colombia" },
   { code: "CR", name: "Costa Rica" },
@@ -42,6 +43,7 @@ export const COUNTRIES: { code: string; name: string }[] = [
   { code: "SV", name: "El Salvador" },
   { code: "SY", name: "Siria" },
   { code: "TN", name: "Túnez" },
+  { code: "US", name: "Estados Unidos" },
   { code: "UY", name: "Uruguay" },
   { code: "VE", name: "Venezuela" },
   { code: "YE", name: "Yemen" },
@@ -57,6 +59,9 @@ export const FISCAL_TYPES = [
 ];
 
 export const SOURCE_LANDING = "IH_LANDING_BENEFICIARIES";
+
+/** URL por defecto de la politica de privacidad (MAWDY) si no hay env var configurada. */
+export const DEFAULT_PRIVACY_POLICY_URL = "https://www.mawdy.com.mx/aviso-privacidad/";
 
 /** Máximo de beneficiarios permitidos por risk item. */
 export const MAX_BENEFICIARIES = 10;
