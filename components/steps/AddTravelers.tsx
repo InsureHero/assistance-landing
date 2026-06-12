@@ -19,7 +19,7 @@ import {
   type PostSalesBeneficiaryAction,
 } from "@/services/post_sales.service";
 import Link from "next/link";
-import { COUNTRIES, FISCAL_TYPES, SOURCE_LANDING, MAX_BENEFICIARIES } from "@/lib/addTravelersConstants";
+import { COUNTRIES, FISCAL_TYPES, SOURCE_LANDING, MAX_BENEFICIARIES, DEFAULT_PRIVACY_POLICY_URL } from "@/lib/addTravelersConstants";
 import {
   getPostSalesSyncedKey,
   isPolicyPrivacyAccepted,
@@ -46,7 +46,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const { t } = useLanguage();
 
-  const privacyPolicyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL ?? "/privacy-policy";
+  const privacyPolicyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL ?? DEFAULT_PRIVACY_POLICY_URL;
 
   // Cargar beneficiarios del risk item al montar el componente (primer elemento = holder)
   // Si el risk item ya trae beneficiarios, marcar como ya sincronizado con post-sales → en el guardado se enviarán como "edit"
