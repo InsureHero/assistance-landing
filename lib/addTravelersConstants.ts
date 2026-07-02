@@ -62,6 +62,3 @@ export const SOURCE_LANDING = "IH_LANDING_BENEFICIARIES";
 
 /** URL por defecto de la politica de privacidad (MAWDY) si no hay env var configurada. */
 export const DEFAULT_PRIVACY_POLICY_URL = "https://www.mawdy.com.mx/aviso-privacidad/";
-
-/** Máximo de beneficiarios permitidos por risk item. */
-export const MAX_BENEFICIARIES = 10;

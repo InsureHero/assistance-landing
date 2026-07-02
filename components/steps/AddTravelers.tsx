@@ -12,6 +12,7 @@ import type { Traveler } from "../BookingFlow";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { RiskItem } from "@/services/risk_item.service";
 import { patchBeneficiaries, patchRiskItemMetadata } from "@/services/risk_item.service";
+import { getStoredAccessToken } from "@/services/auth.service";
 import type { BeneficiaryPayload } from "@/services/risk_item.service";
 import {
   postSalesSyncBeneficiaries,
@@ -19,7 +20,7 @@ import {
   type PostSalesBeneficiaryAction,
 } from "@/services/post_sales.service";
 import Link from "next/link";
-import { COUNTRIES, FISCAL_TYPES, SOURCE_LANDING, MAX_BENEFICIARIES, DEFAULT_PRIVACY_POLICY_URL } from "@/lib/addTravelersConstants";
+import { COUNTRIES, FISCAL_TYPES, SOURCE_LANDING, DEFAULT_PRIVACY_POLICY_URL } from "@/lib/addTravelersConstants";
 import {
   getPostSalesSyncedKey,
   isPolicyPrivacyAccepted,
@@ -44,6 +45,8 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  // Tope de beneficiarios del producto. Infinity = sin límite (mientras carga o si falla la lectura).
+  const [maxBeneficiaries, setMaxBeneficiaries] = useState(Infinity);
   const { t } = useLanguage();
 
   const privacyPolicyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL ?? DEFAULT_PRIVACY_POLICY_URL;
@@ -62,6 +65,23 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
     }
     setPrivacyAccepted(isPolicyPrivacyAccepted(riskItem?.metadata));
   }, [riskItem, setTravelers]);
+
+  // Tope de beneficiarios por producto. Fallback permisivo (sin límite) si falla la lectura.
+  useEffect(() => {
+    const packageId = riskItem?.package_id;
+    const channelId = (riskItem as { channel_id?: string } | null)?.channel_id;
+    if (!packageId || !channelId) return;
+    const token = getStoredAccessToken();
+    fetch(
+      `/api/beneficiaries-limit?package_id=${encodeURIComponent(packageId)}&channel_id=${encodeURIComponent(channelId)}`,
+      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (typeof d?.max_beneficiaries === "number") setMaxBeneficiaries(d.max_beneficiaries);
+      })
+      .catch(() => {});
+  }, [riskItem]);
 
   const validateAndGetError = (): string | null => {
     if (!currentTraveler.dateOfBirth) return t.addTravelers.fillAll;
@@ -108,10 +128,6 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
       setEditingIndex(null);
       toast.success(t.addTravelers.travelerUpdated);
     } else {
-      if (travelers.length >= MAX_BENEFICIARIES) {
-        toast.error(t.addTravelers.maxBeneficiariesReached);
-        return;
-      }
       // Nuevo traveler desde el landing: siempre isTraveler: true, isHolder: false
       const newTraveler: Traveler = {
         ...currentTraveler,
@@ -513,17 +529,18 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
             <h3 className="font-semibold flex items-center gap-2">
               <Plus className="w-5 h-5 text-primary" /> {t.addTravelers.addNewTraveler}
             </h3>
-            {travelers.length >= MAX_BENEFICIARIES ? (
-              <p className="text-sm text-muted-foreground">{t.addTravelers.maxBeneficiariesReached}</p>
-            ) : (
-              <>
-                {renderFormFields("new")}
-                <div className="flex gap-2">
-                  <Button onClick={handleAddOrSaveTraveler} className="flex-1 gradient-ocean text-white hover:opacity-90">
-                    <Plus className="mr-2 w-4 h-4" /> {t.addTravelers.addThisTraveler}
-                  </Button>
-                </div>
-              </>
+            {renderFormFields("new")}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAddOrSaveTraveler}
+                disabled={travelers.length >= maxBeneficiaries}
+                className="flex-1 gradient-ocean text-white hover:opacity-90"
+              >
+                <Plus className="mr-2 w-4 h-4" /> {t.addTravelers.addThisTraveler}
+              </Button>
+            </div>
+            {travelers.length >= maxBeneficiaries && (
+              <p className="text-sm text-amber-600 dark:text-amber-400">{t.addTravelers.maxBeneficiariesProduct}</p>
             )}
           </div>
         )}
