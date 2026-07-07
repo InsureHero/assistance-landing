@@ -44,8 +44,8 @@ export type RiskItemForPostSales = Omit<RiskItem, "beneficiaries"> & {
   beneficiaries: PostSalesBeneficiary[];
 };
 
-/** Body del POST /api/integrations/post-sales: risk item directo (con beneficiaries transformados dentro). */
-export type PostSalesRequestBody = RiskItemForPostSales;
+/** Body del POST /api/integrations/post-sales: { riskItem } (con beneficiaries transformados dentro). */
+export type PostSalesRequestBody = { riskItem: RiskItemForPostSales };
 
 /**
  * Convierte BeneficiaryPayload + action a PostSalesBeneficiary (camelCase para el API).
@@ -77,7 +77,7 @@ export function toPostSalesBeneficiary(
 /**
  * Envía al API de integraciones post-venta.
  * Se debe llamar **después** de haber actualizado los beneficiarios del risk item (PUT beneficiaries).
- * Body: risk item directo (sin wrapper); los beneficiaries se transforman con toPostSalesBeneficiary (action en cada uno).
+ * Body: { riskItem } — el risk item va envuelto; los beneficiaries se transforman con toPostSalesBeneficiary (action en cada uno).
  *
  * @param riskItem - Risk item completo (obligatorio)
  * @param beneficiariesWithAction - Lista de beneficiarios con action "create" | "edit" por cada uno
@@ -97,7 +97,7 @@ export async function postSalesSyncBeneficiaries(
     ...riskItem,
     beneficiaries,
   };
-  const body: PostSalesRequestBody = riskItemForPostSales;
+  const body: PostSalesRequestBody = { riskItem: riskItemForPostSales };
 
   const url = `${baseUrl}/api/integrations/post-sales`;
 
