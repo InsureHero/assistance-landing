@@ -48,6 +48,12 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
 
   const privacyPolicyUrl = process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL ?? DEFAULT_PRIVACY_POLICY_URL;
 
+  // Destino real de la reserva; sin él, texto genérico (ponytail: antes estaba hardcodeado "Los Cabos").
+  const destination = riskItem?.insured_subject?.destination?.trim();
+  const description = destination
+    ? t.addTravelers.description.replace("{destination}", destination)
+    : t.addTravelers.descriptionNoDestination;
+
   // Cargar beneficiarios del risk item al montar el componente (primer elemento = holder)
   // Si el risk item ya trae beneficiarios, marcar como ya sincronizado con post-sales → en el guardado se enviarán como "edit"
   // Inicializar checkbox de política de privacidad desde metadata (policy_privacy === true → marcado)
@@ -395,7 +401,7 @@ export const AddTravelers = ({ riskItem, travelers, setTravelers, onNext, onBack
           <Users className="w-8 h-8 text-primary-foreground" />
         </div>
         <CardTitle className="text-2xl font-serif">{t.addTravelers.title}</CardTitle>
-        <CardDescription className="text-base">{t.addTravelers.description}</CardDescription>
+        <CardDescription className="text-base">{description}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">

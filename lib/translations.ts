@@ -48,7 +48,8 @@ export const translations = {
     },
     addTravelers: {
       title: "Add Travelers",
-      description: "Include all travelers for your trip to Los Cabos",
+      description: "Include all travelers for your trip to {destination}",
+      descriptionNoDestination: "Include all travelers for your trip",
       addedTravelers: "Added Travelers",
       primaryBooker: "Primary Booker",
       holder: "Holder",
@@ -180,7 +181,8 @@ export const translations = {
     },
     addTravelers: {
       title: "Agregar Viajeros",
-      description: "Incluye a todos los viajeros para tu viaje a Los Cabos",
+      description: "Incluye a todos los viajeros para tu viaje a {destination}",
+      descriptionNoDestination: "Incluye a todos los viajeros para tu viaje",
       addedTravelers: "Viajeros Agregados",
       primaryBooker: "Titular de la Reserva",
       holder: "Titular",
