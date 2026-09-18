@@ -18,6 +18,7 @@ import { getRiskItemsByEmail } from "@/services/risk_item.service";
 import type { Variant } from "@/services/variant.service";
 import { getVariantsByRiskItemId } from "@/services/variant.service";
 import { toast } from "sonner";
+import { formatDateOnly, parseDateOnly } from "@/lib/dates";
 
 const DESTINATION_LABEL = "Riviera Maya";
 const LOCATION_LABEL = "Quintana Roo, Mexico";
@@ -35,22 +36,6 @@ const DEFAULT_BENEFITS = [
   { name: "Cash Delivery", coverage: "Up to $10,000 USD" },
 ];
 
-/** Formatea fecha ISO (ej. 2026-04-16) a legible según locale */
-function formatTripDate(isoDate: string | undefined, locale: string): string {
-  if (!isoDate) return "—";
-  try {
-    const d = new Date(isoDate);
-    if (Number.isNaN(d.getTime())) return isoDate;
-    return d.toLocaleDateString(locale === "es" ? "es-MX" : "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return isoDate;
-  }
-}
-
 /**
  * Calcula días y noches entre tripStartDate y tripEndDate.
  * Retorna objeto con días y noches (si el viaje dura 2 días, son 2 días y 2 noches).
@@ -59,18 +44,13 @@ function calculateTripDuration(
   startIso: string | undefined,
   endIso: string | undefined
 ): { days: number; nights: number } {
-  if (!startIso || !endIso) return { days: 0, nights: 0 };
-  try {
-    const start = new Date(startIso.slice(0, 10));
-    const end = new Date(endIso.slice(0, 10));
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return { days: 0, nights: 0 };
-    const diffMs = end.getTime() - start.getTime();
-    const diffDays = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-    // Si el viaje dura N días, son N días y N noches
-    return { days: diffDays, nights: diffDays };
-  } catch {
-    return { days: 0, nights: 0 };
-  }
+  const start = parseDateOnly(startIso);
+  const end = parseDateOnly(endIso);
+  if (!start || !end) return { days: 0, nights: 0 };
+  const diffMs = end.getTime() - start.getTime();
+  const diffDays = Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  // Si el viaje dura N días, son N días y N noches
+  return { days: diffDays, nights: diffDays };
 }
 
 /** Formatea nombre completo: firstName lastName maternalLastName */
@@ -213,8 +193,8 @@ export const TripSummary = ({ email, onNext, onBack, onNoPlans }: TripSummaryPro
           const status = item.status ?? "";
           const statusLower = status.toLowerCase();
           const isActive = statusLower === "active";
-          const checkInFormatted = formatTripDate(startDate, language);
-          const checkOutFormatted = formatTripDate(endDate, language);
+          const checkInFormatted = formatDateOnly(startDate, language);
+          const checkOutFormatted = formatDateOnly(endDate, language);
           const fullName = formatFullName(subject?.firstName, subject?.lastName, subject?.maternalLastName);
           const origin = subject?.origin ?? "";
           const destination = subject?.destination ?? "";
