@@ -20,3 +20,31 @@ export function toIsoDate(value: string): string {
   }
   return s;
 }
+
+/**
+ * Parsea una fecha "solo fecha" (YYYY-MM-DD, con o sin hora) como fecha LOCAL.
+ * Evita el off-by-one de `new Date("2026-09-20")`, que se interpreta como UTC
+ * y retrocede un día en zonas horarias negativas (UTC-).
+ * Retorna null si no es parseable.
+ */
+export function parseDateOnly(s: string | undefined): Date | null {
+  const m = (s ?? "").slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const [, y, mo, d] = m;
+  const date = new Date(Number(y), Number(mo) - 1, Number(d));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Formatea una fecha "solo fecha" a texto legible según idioma ("es" | "en").
+ * Usa la fecha local (parseDateOnly), así el día mostrado nunca cambia por TZ.
+ */
+export function formatDateOnly(s: string | undefined, locale: string): string {
+  const date = parseDateOnly(s);
+  if (!date) return s ?? "—";
+  return date.toLocaleDateString(locale === "es" ? "es-MX" : "en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
